@@ -303,5 +303,11 @@ Thunk.o: src/Thunk.cpp
 	g++ -o $@ $(CXXFLAGS) $<
 
 
+vpassert : libjitbuilder.a VPAssert.o
+	g++ -g -fno-rtti -o $@ VPAssert.o -L. -ljitbuilder -ldl
+
+VPAssert.o: src/vpassert.cpp
+	g++ -o $@ $(CXXFLAGS) $<
+
 clean:
 	@rm -f $(ALL_TESTS) replay *.o
