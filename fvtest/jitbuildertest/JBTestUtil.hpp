@@ -25,6 +25,9 @@
 #include "ilgen/TypeDictionary.hpp"
 #include "ilgen/MethodBuilder.hpp"
 
+#include <vector>
+#include <utility>
+
 /*
  * Convenience macro for defining type dictionary objects. `name` is the name of
  * the class that will be created. The "body" of the macro should contain the
@@ -65,6 +68,91 @@
 
 #define DEF_BUILDIL(name) \
    inline bool name::buildIL()
+
+/*
+ * `DEFINE_BUILDER` is a convenience macro for defining MethodBuilder class
+ * using a compact syntax. The goal of the macro is to abstract away some of the
+ * boiler plate code that is required for defining instances of MethodBuilder.
+ *
+ * The first argument to the macro is the name of the MethodBuilder class that
+ * will be constructed. This is also used as the name of the method built by the
+ * class.
+ *
+ * The second argument is an instance of `TR::IlValue *` that represents the
+ * return type of the method.
+ *
+ * The following variadic argument are pairs with a `const char *` component
+ * and a `TR::IlValue *` component. The first component is the name of parameter
+ * and the second is a `TR::IlValue` instance representing the parameter's type.
+ * The `PARAM` macro should be used when defining these pairs because simple
+ * brace initializers cannot be used when invoking a macro.
+ *
+ * The body of the macro should contain the code that will be used as body for
+ * the `buildIL()` function.
+ *
+ * Because the arguments to the macro are used within the scope of the class
+ * definition, the services provided by `TR::MethodBuilder` are available for
+ * use (e.g. `typeDictionary()` can be used when defining types).
+ *
+ * For convenience, the following methods from `TR::TypeDictionary` are also
+ * made available:
+ *
+ *    toIlType<T>()
+ *    LookupStruct(const char *name)
+ *    LookupUnion(const char *name)
+ *    PointerTo(TR::IlType *type)
+ *    PointerTo(const char *structName)
+ *    PointerTo(TR::DataType type)
+ *    PrimitiveType(TR::DataType type)
+ *    GetFieldType(const char *structName, const char *fieldName)
+ *    UnionFieldType(const char *unionName, const char *fieldName)
+ *
+ * Example use:
+ *
+ *    DEFINE_BUILDER( MyMethod,                                            // name of the builder/method
+ *                    toIlType<int *>(),                                   // return type of the method
+ *                    PARAM("arg1", PointerTo(LookupStruct("MyStruct"))),  // first argument of the method
+ *                    PARAM("arg2", Double) )                              // second argument of the method
+ *       {
+ *       // Implementation of `buildIL()`
+ *
+ *       return true;
+ *       }
+ */
+#define DEFINE_BUILDER(name, returnType, ...) \
+   struct name : public TR::MethodBuilder \
+      { \
+      name(TR::TypeDictionary *types) : TR::MethodBuilder(types) \
+         { \
+         DefineLine(LINETOSTR(__LINE__)); \
+         DefineFile(__FILE__); \
+         DefineName(#name); \
+         DefineReturnType(returnType); \
+         std::vector<std::pair<const char *, TR::IlType *> > args = {__VA_ARGS__}; \
+         for (int i = 0, s = args.size(); i < s; ++i) \
+            { \
+            DefineParameter(args[i].first, args[i].second); \
+            } \
+         } \
+      bool buildIL(); \
+      template <typename T> TR::IlType * toIlType() { return typeDictionary()->toIlType<T>(); } \
+      TR::IlType * LookupStruct(const char *name) { return typeDictionary()->LookupStruct(name); } \
+      TR::IlType * LookupUnion(const char *name) { return typeDictionary()->LookupUnion(name); } \
+      TR::IlType * PointerTo(TR::IlType *type) { return typeDictionary()->PointerTo(type); } \
+      TR::IlType * PointerTo(const char *structName) { return typeDictionary()->PointerTo(structName); } \
+      TR::IlType * PointerTo(TR::DataType type) { return typeDictionary()->PointerTo(type); } \
+      TR::IlType * PrimitiveType(TR::DataType type) { return typeDictionary()->PrimitiveType(type); } \
+      TR::IlType * GetFieldType(const char *structName, const char *fieldName) { return typeDictionary()->GetFieldType(structName, fieldName); } \
+      TR::IlType * UnionFieldType(const char *unionName, const char *fieldName) { return typeDictionary()->UnionFieldType(unionName, fieldName); } \
+      }; \
+   inline bool name::buildIL()
+
+/*
+ * A convenience macro for defining MethodBuilder parameter pairs. The first
+ * argument to the macro is the name of the parameter, the second is the the
+ * `TR::IlType` instance representing the type of the parameter.
+ */
+#define PARAM(name, type) {name, type}
 
 /**
  * @brief The JitBuilderTest class is a basic test fixture for JitBuilder test cases.
