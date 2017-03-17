@@ -47,26 +47,72 @@
    inline name::name() : TR::TypeDictionary()
 
 /*
- * Convenience macro for declaring a MethodBuilder class. `name` is the name of
- * the class that will be created. The macro will ensure the class inherits from
- * `TR::MethodBuilder` and that the constructor and `buildIL()` method are
+ * A convenience macro for declaring a MethodBuilder class. `name` is the name
+ * of the class that will be created. The macro will ensure the class inherits
+ * from `TR::MethodBuilder` and that the constructor and `buildIL()` method are
  * declared. A ';' is required at the end of the macro invocation.
  *
  * Example use:
  *
- *    DECL_TEST_BUILDER(MyFunctionBuilder);
+ *    DECLARE_BUILDER(MyFunctionBuilder);
  */
-#define DECL_TEST_BUILDER(name) \
+#define DECLARE_BUILDER(name) \
    class name : public TR::MethodBuilder { \
       public: \
       name(TR::TypeDictionary *); \
       virtual bool buildIL(); \
    }
 
-#define DEF_TEST_BUILDER_CTOR(name) \
+/*
+ * A convenience macro for defining the constructor of a declared builder class.
+ * It will ensure that the parent constructor is invoked correctly.
+ *
+ * The argument is the name of the builder class who's constructor is being defined.
+ * The body should contain the actual definition of the constructor.
+ *
+ * This macro is best used in conjunction with the `DECLARE_BUILDER` macro.
+ *
+ * Example use:
+ *
+ *    DECLARE_BUILDER(MyMethod);
+ *    DEFINE_BUILDER_CTOR(MyMethod)
+ *       {
+ *       DefineLine(LINETOSTR(__LINE__));
+ *       DefineFile(__FILE__);
+ *       DefineName("MyMethod");
+ *       DefineReturnType(NoType);
+ *       }
+ */
+#define DEFINE_BUILDER_CTOR(name) \
    inline name::name(TR::TypeDictionary *types) : TR::MethodBuilder(types)
 
-#define DEF_BUILDIL(name) \
+/*
+ * A convenience macro for defining the `buildIL()` function of a declared
+ * builder class. The argumetn is the name of the builder class. The body should
+ * be the definition of the `buildIL()` function.
+ *
+ * This macro is intended to be used in conjunction with `DECLARE_BUILDER` and
+ * `DEFINE_BUILDER_CTOR` macros.
+ *
+ * Example use:
+ *
+ *    DECLARE_BUILDER(MyMethod);
+ *
+ *    DEFINE_BUILDER_CTOR(MyMethod)
+ *       {
+ *       DefineLine(LINETOSTR(__LINE__));
+ *       DefineFile(__FILE__);
+ *       DefineName("MyMethod");
+ *       DefineReturnType(NoType);
+ *       }
+ *
+ *    DEFINE_BUILDIL(MyMethod)
+ *       {
+ *       Return();
+ *       return true;
+ *       }
+ */
+#define DEFINE_BUILDIL(name) \
    inline bool name::buildIL()
 
 /*
@@ -111,8 +157,8 @@
  *
  *    DEFINE_BUILDER( MyMethod,                                            // name of the builder/method
  *                    toIlType<int *>(),                                   // return type of the method
- *                    PARAM("arg1", PointerTo(LookupStruct("MyStruct"))),  // first argument of the method
- *                    PARAM("arg2", Double) )                              // second argument of the method
+ *                    PARAM("arg1", PointerTo(LookupStruct("MyStruct"))),  // first parameter of the method
+ *                    PARAM("arg2", Double) )                              // second parameter of the method
  *       {
  *       // Implementation of `buildIL()`
  *
