@@ -209,6 +209,7 @@ JIT_PRODUCT_SOURCE_FILES+=\
     $(JIT_PRODUCT_DIR)/tests/OptTestDriver.cpp \
     $(JIT_PRODUCT_DIR)/tests/TestDriver.cpp \
     $(JIT_PRODUCT_DIR)/tests/X86OpCodesTest.cpp \
+    $(JIT_PRODUCT_DIR)/madlibstests/return.cpp \
     $(JIT_PRODUCT_DIR)/tests/main.cpp \
     $(JIT_OMR_DIRTY_DIR)/env/FEBase.cpp \
     $(JIT_OMR_DIRTY_DIR)/env/JitConfig.cpp \
