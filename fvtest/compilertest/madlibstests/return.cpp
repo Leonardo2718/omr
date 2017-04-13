@@ -51,21 +51,17 @@ TEST(OpcodeTest, ReturnTest)
 
 //~ test using blank/filler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class ReturnTemplateInjector : public TR::IlInjector
+class ReturnTemplateInjector : public InjectorWithFiller
    {
    public:
-   ReturnTemplateInjector(TR::TypeDictionary* d, NodeFiller filler) : TR::IlInjector(d), _filler(filler) {}
+   ReturnTemplateInjector(TR::TypeDictionary* d, NodeFiller filler) : InjectorWithFiller(d, filler) {}
    bool injectIL() override;
-
-   private:
-   NodeFiller _filler;
    };
 
 bool ReturnTemplateInjector::injectIL()
    {
    createBlocks(1);
-   returnValue(_filler(this)); // call filler function to "fill in" the value
-                               // to be returned
+   returnValue(blank()); // leave a blank to be filled by a "filler" function
    return true;
    }
 
@@ -92,7 +88,10 @@ TEST_P(TestWithFiller, ReturnValueTest)
                                     // proof of concept
    }
 
-// instantiate three test instances
+// instantiate test instances
 INSTANTIATE_TEST_CASE_P(OpcodeTest,
                         TestWithFiller,
-                        ::testing::Values(ConstantFiller<3>, ConstantFiller<4>, ParameterFiller<0>));
+                        ::testing::Values( ConstantFiller<int32_t, 3>,      // generate Int32 constant 3
+                                           ConstantFiller<int32_t, 4>,      // generate Int32 constant 4
+                                           ParameterFiller<0, int32_t>,     // load parameter 0 as Int32
+                                           ParameterFiller<0, TR::Int32> ));// load parameter 0 as Int32
