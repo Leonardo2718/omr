@@ -16,14 +16,7 @@
  *    Multiple authors (IBM Corp.) - initial implementation and documentation
  ******************************************************************************/
 
-#include "compile/Method.hpp"
-#include "compile/CompilationTypes.hpp"
-#include "ilgen/IlGeneratorMethodDetails_inlines.hpp"
-#include "ilgen/TypeDictionary.hpp"
-#include "ilgen/IlInjector.hpp"
-#include "gtest/gtest.h"
-
-extern "C" uint8_t *compileMethod(TR::IlGeneratorMethodDetails &, TR_Hotness, int32_t &);
+#include "compilertestutil.hpp"
 
 //~ sanity test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -55,3 +48,51 @@ TEST(OpcodeTest, ReturnTest)
    auto entry = reinterpret_cast<void(*)()>(compileMethod(details, warm, rc));
    entry();
    }
+
+//~ test using blank/filler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class ReturnTemplateInjector : public TR::IlInjector
+   {
+   public:
+   ReturnTemplateInjector(TR::TypeDictionary* d, NodeFiller filler) : TR::IlInjector(d), _filler(filler) {}
+   bool injectIL() override;
+
+   private:
+   NodeFiller _filler;
+   };
+
+bool ReturnTemplateInjector::injectIL()
+   {
+   createBlocks(1);
+   returnValue(_filler(this)); // call filler function to "fill in" the value
+                               // to be returned
+   return true;
+   }
+
+class TestWithFiller : public ::testing::TestWithParam<NodeFiller>
+   {
+   };
+
+TEST_P(TestWithFiller, ReturnValueTest)
+   {
+   TR::TypeDictionary types;
+
+   ReturnTemplateInjector returnInjector(&types, GetParam()); // filler passed as test parameter
+
+   auto* Int32 = returnInjector.typeDictionary()->toIlType<int32_t>();
+   constexpr auto numberOfArguments = 1;
+   TR::IlType* argTypes[numberOfArguments] = {Int32};
+   TR::ResolvedMethod compilee("", "", "", numberOfArguments, argTypes, Int32, 0, &returnInjector);
+   TR::IlGeneratorMethodDetails details(&compilee);
+
+   int32_t rc = 0;
+   auto entry = reinterpret_cast<int32_t(*)(int32_t)>(compileMethod(details, warm, rc));
+   ASSERT_EQ(0, rc) << "Compilation failed.";
+   std::cerr << entry(5) << "\n";   // not ideal for a test but good enough for
+                                    // proof of concept
+   }
+
+// instantiate three test instances
+INSTANTIATE_TEST_CASE_P(OpcodeTest,
+                        TestWithFiller,
+                        ::testing::Values(ConstantFiller<3>, ConstantFiller<4>, ParameterFiller<0>));
