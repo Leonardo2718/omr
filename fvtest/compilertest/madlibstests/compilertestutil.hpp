@@ -28,20 +28,59 @@
 
 #include <functional>
 #include <type_traits>
+#include <array>
 
 extern "C" uint8_t *compileMethod(TR::IlGeneratorMethodDetails &, TR_Hotness, int32_t &);
 
 using NodeFiller = std::function<TR::Node * (TR::IlInjector *)>;
 
-class InjectorWithFiller : public TR::IlInjector
+template <std::size_t N>
+using NodeFillerArray = std::array<NodeFiller, N>;
+
+/**
+ * @brief IlInjector class supporting the use of blanks/fillers
+ *
+ * The template parameter `N` is the number of fillers expected by the instance.
+ */
+template <std::size_t N>
+class InjectorWithFillers : public TR::IlInjector
    {
    public:
-   InjectorWithFiller(TR::TypeDictionary* d, NodeFiller filler) : TR::IlInjector(d), _filler(filler) {}
 
-   TR::Node * blank() { return _filler(this); }
+   // type of the array holding the fillers
+   using FillerArray = NodeFillerArray<N>;
+
+   InjectorWithFillers(TR::TypeDictionary* d, FillerArray fillers) : TR::IlInjector(d), _fillers(fillers) {}
+
+   /**
+    * @brief Bank injector
+    *
+    * Leaves a "blank" that will be filled by a "filler" function.
+    */
+   template <std::size_t I>
+   TR::Node * blank()
+      {
+      static_assert(I < N, "index is greater than number of expected fillers.");
+      return _fillers[I](this);
+      }
 
    protected:
-   NodeFiller _filler;
+   FillerArray _fillers;
+   };
+
+/**
+ * @brief Test fixture base class for IlInjector tests using blanks/fillers
+ *
+ * The template parameter `N` is the number of fillers expected by the instance.
+ *
+ * It publically inherits from `::testing::TestWithParam< NodeFillerArray<N> >`
+ * to allow tests to be instantiated by gtests `INSTANTIATE_TEST_CASE_P` macro.
+ */
+template <std::size_t N>
+class TestWithFiller : public ::testing::TestWithParam< NodeFillerArray<N> >
+   {
+   public:
+   using FillerArray = NodeFillerArray<N>;
    };
 
 //~ ConstantFiller ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

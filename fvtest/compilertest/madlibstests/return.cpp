@@ -51,25 +51,23 @@ TEST(OpcodeTest, ReturnTest)
 
 //~ test using blank/filler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class ReturnTemplateInjector : public InjectorWithFiller
+class ReturnTemplateInjector : public InjectorWithFillers<1>
    {
    public:
-   ReturnTemplateInjector(TR::TypeDictionary* d, NodeFiller filler) : InjectorWithFiller(d, filler) {}
+   ReturnTemplateInjector(TR::TypeDictionary* d, FillerArray fillers) : InjectorWithFillers(d, fillers) {}
    bool injectIL() override;
    };
 
 bool ReturnTemplateInjector::injectIL()
    {
    createBlocks(1);
-   returnValue(blank()); // leave a blank to be filled by a "filler" function
+   returnValue(blank<0>()); // leave a blank to be filled by a "filler" function 0
    return true;
    }
 
-class TestWithFiller : public ::testing::TestWithParam<NodeFiller>
-   {
-   };
+class ReturnWithFiller: public TestWithFiller<1> {};
 
-TEST_P(TestWithFiller, ReturnValueTest)
+TEST_P(ReturnWithFiller, ReturnValueTest)
    {
    TR::TypeDictionary types;
 
@@ -88,10 +86,17 @@ TEST_P(TestWithFiller, ReturnValueTest)
                                     // proof of concept
    }
 
-// instantiate test instances
+/*
+ * Instantiate test instances
+ *
+ * 1) will fill with Int32 constant 3
+ * 2) will fill with Int32 constant 4
+ * 3) will fill with load of first parameter as an Int32
+ * 4) will fill with load of first parameter as an Int32
+ */
 INSTANTIATE_TEST_CASE_P(OpcodeTest,
-                        TestWithFiller,
-                        ::testing::Values( ConstantFiller<int32_t, 3>,      // generate Int32 constant 3
-                                           ConstantFiller<int32_t, 4>,      // generate Int32 constant 4
-                                           ParameterFiller<0, int32_t>,     // load parameter 0 as Int32
-                                           ParameterFiller<0, TR::Int32> ));// load parameter 0 as Int32
+                        ReturnWithFiller,
+                        ::testing::Values( ReturnWithFiller::FillerArray{ConstantFiller<int32_t, 3>},
+                                           ReturnWithFiller::FillerArray{ConstantFiller<int32_t, 4>},
+                                           ReturnWithFiller::FillerArray{ParameterFiller<0, int32_t>},
+                                           ReturnWithFiller::FillerArray{ParameterFiller<0, TR::Int32>} ));
