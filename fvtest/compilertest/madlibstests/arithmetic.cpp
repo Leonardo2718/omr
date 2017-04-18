@@ -28,7 +28,7 @@ DEFINE_INJECTOR_WITH_BLANKS(AddTestInjector,2)
    return true;
    }
 
-class AddWithFiller : public TestWithFiller<2> {};
+using AddWithFiller = TestWithFiller<2>;
 
 TEST_P(AddWithFiller, SimpleAddTest)
    {
@@ -62,7 +62,7 @@ TEST_P(AddWithFiller, SimpleAddTest)
  */
 INSTANTIATE_TEST_CASE_P(OpcodeTest,
                         AddWithFiller,
-                        ::testing::Values( AddWithFiller::FillerArray{ConstantFiller<int32_t, 1>, ConstantFiller<int32_t, 2>},
-                                           AddWithFiller::FillerArray{ConstantFiller<int32_t, 1>, ParameterFiller<1, int32_t>},
-                                           AddWithFiller::FillerArray{ParameterFiller<0, int32_t>, ConstantFiller<int32_t, 2>},
+                        ::testing::Values( AddWithFiller::FillerArray{ConstantFiller<TR::Int32>(1), ConstantFiller<int32_t>(2)},
+                                           AddWithFiller::FillerArray{ConstantFiller<int32_t>(1), ParameterFiller<1, int32_t>},
+                                           AddWithFiller::FillerArray{ParameterFiller<0, int32_t>, ConstantFiller<int32_t>(2)},
                                            AddWithFiller::FillerArray{ParameterFiller<0, TR::Int32>, ParameterFiller<1, int32_t>} ));

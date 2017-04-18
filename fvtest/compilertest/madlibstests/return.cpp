@@ -51,7 +51,7 @@ DEFINE_INJECTOR_WITH_BLANKS(ReturnTemplateInjector, 1)
    return true;
    }
 
-class ReturnWithFiller: public TestWithFiller<1> {};
+using ReturnWithFiller = TestWithFiller<1>;
 
 TEST_P(ReturnWithFiller, ReturnValueTest)
    {
@@ -82,7 +82,7 @@ TEST_P(ReturnWithFiller, ReturnValueTest)
  */
 INSTANTIATE_TEST_CASE_P(OpcodeTest,
                         ReturnWithFiller,
-                        ::testing::Values( ReturnWithFiller::FillerArray{ConstantFiller<int32_t, 3>},
-                                           ReturnWithFiller::FillerArray{ConstantFiller<int32_t, 4>},
+                        ::testing::Values( ReturnWithFiller::FillerArray{ConstantFiller<int32_t>(3)},
+                                           ReturnWithFiller::FillerArray{ConstantFiller<TR::Int32>(4)},
                                            ReturnWithFiller::FillerArray{ParameterFiller<0, int32_t>},
                                            ReturnWithFiller::FillerArray{ParameterFiller<0, TR::Int32>} ));
