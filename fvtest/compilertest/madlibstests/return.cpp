@@ -20,14 +20,7 @@
 
 //~ sanity test ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class ReturnInjector : public TR::IlInjector
-   {
-   public:
-   ReturnInjector(TR::TypeDictionary* d) : TR::IlInjector(d) {}
-   bool injectIL() override;
-   };
-
-bool ReturnInjector::injectIL()
+DEFINE_SIMPLE_INJECTOR(ReturnInjector)
    {
    createBlocks(1);
    returnNoValue();
@@ -51,14 +44,7 @@ TEST(OpcodeTest, ReturnTest)
 
 //~ test using blank/filler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class ReturnTemplateInjector : public InjectorWithFillers<1>
-   {
-   public:
-   ReturnTemplateInjector(TR::TypeDictionary* d, FillerArray fillers) : InjectorWithFillers(d, fillers) {}
-   bool injectIL() override;
-   };
-
-bool ReturnTemplateInjector::injectIL()
+DEFINE_INJECTOR_WITH_BLANKS(ReturnTemplateInjector, 1)
    {
    createBlocks(1);
    returnValue(blank<0>()); // leave a blank to be filled by a "filler" function 0
