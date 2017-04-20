@@ -32,6 +32,33 @@
 
 extern "C" uint8_t *compileMethod(TR::IlGeneratorMethodDetails &, TR_Hotness, int32_t &);
 
+/**
+ * @brief Macro for defining an IL injector class
+ *
+ * @param name is the name of the IL injector class that will be defined
+ *
+ * The body of the macro should contain the implementation of the `injectIL`
+ * function.
+ *
+ * Example:
+ *
+ *    DEFINE_SIMPLE_INJECTOR(SimpleReturn)
+ *       {
+ *       createBlocks(1);
+ *       returnNoValue();
+ *       return true;
+ *       }
+ */
+#define DEFINE_SIMPLE_INJECTOR(name) \
+   struct name : public TR::IlInjector \
+      { \
+      name(TR::TypeDictionary* d) : TR::IlInjector(d) {} \
+      bool injectIL() override; \
+      }; \
+   inline bool name::injectIL()
+
+//~ blank/filler mechanism ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 using NodeFiller = std::function<TR::Node * (TR::IlInjector *)>;
 
 template <std::size_t N>
@@ -67,6 +94,32 @@ class InjectorWithFillers : public TR::IlInjector
    protected:
    FillerArray _fillers;
    };
+
+/**
+ * @brief Macro for defining IL injector class that uses blanks/fillers
+ *
+ * @param name is the name of the IL injector class that will be defined
+ * @param blankCount is the number of blanks/fillers expected by the injector
+ *
+ * The body of the macro should contain the implementation of the `injectIL`
+ * function.
+ *
+ * Example:
+ *
+ *    DEFINE_INJECTOR_WITH_BLANKS(SimpleReturn, 1)
+ *       {
+ *       createBlocks(1);
+ *       returnValue(blank<0>());
+ *       return true;
+ *       }
+ */
+#define DEFINE_INJECTOR_WITH_BLANKS(name, blankCount) \
+   struct name : public InjectorWithFillers<blankCount> \
+      { \
+      name(TR::TypeDictionary* d, FillerArray fillers) : InjectorWithFillers<blankCount>(d, fillers) {} \
+      bool injectIL() override; \
+      }; \
+   inline bool name::injectIL()
 
 /**
  * @brief Test fixture base class for IlInjector tests using blanks/fillers
