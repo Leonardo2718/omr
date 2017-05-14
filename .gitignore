@@ -24,6 +24,7 @@ omrversionstrings.h
 CTestTestfile.cmake
 Makefile
 cmake_install.cmake
+*.ninja*
 
 # configure artifacts
 autom4te.cache
@@ -153,6 +154,9 @@ port/omrsyslogmessages.h
 port/omrsyslogmessages.rc
 port/MSG00001.bin
 x64/
+
+# Qt Creator
+CMakeLists.txt.user*
 
 # Test Output
 core
