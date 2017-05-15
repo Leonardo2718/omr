@@ -43,21 +43,10 @@ include_directories(
 )
 
 add_definitions(
-    -fno-rtti
-    -fno-threadsafe-statics
-    -Wno-deprecated
-    -Wno-enum-compare
-    -Wno-invalid-offsetof
-    -Wno-write-strings
+    ${OMR_COMPILER_CXX_BASE_FLAGS}
+    ${OMR_COMPILER_CXX_ERROR_FLAGS}
+    ${OMR_COMPILER_CXX_PLATFORM_FLAGS}
     -O3
-    -pthread
-    -fomit-frame-pointer
-    -fasynchronous-unwind-tables
-    -Wreturn-type
-    -fno-dollars-in-identifiers
-    -m64
-    -fPIC
-    -fno-strict-aliasing
 
     -DBITVECTOR_BIT_NUMBERING_MSB
     -DUT_DIRECT_TRACE_REGISTRATION

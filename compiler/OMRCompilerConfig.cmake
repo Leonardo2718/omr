@@ -20,6 +20,27 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 project(OMRCompiler CXX)
 
+set(OMR_COMPILER_CXX_BASE_FLAGS
+    -fno-rtti
+    -fno-threadsafe-statics
+    -fomit-frame-pointer
+    -fasynchronous-unwind-tables
+    -fno-dollars-in-identifiers
+    -fno-strict-aliasing
+    -pthread
+)
+set(OMR_COMPILER_CXX_ERROR_FLAGS
+    -Wno-deprecated
+    -Wno-enum-compare
+    -Wno-invalid-offsetof
+    -Wno-write-strings
+    -Wreturn-type
+)
+set(OMR_COMPILER_CXX_PLATFORM_FLAGS
+    -m64
+    -fPIC
+)
+
 # common.mk
 list(APPEND OMR_JIT_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/compile/OSRData.cpp
