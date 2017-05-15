@@ -231,58 +231,66 @@ list(APPEND OMR_JIT_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/env/PersistentAllocator.cpp
 )
 
-# target/x.mk
 if(OMR_COMPILER_TARGET_ARCHITECTURE STREQUAL "x")
-list(APPEND OMR_JIT_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/BinaryCommutativeAnalyser.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/BinaryEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/CompareAnalyser.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/ConstantDataSnippet.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/ControlFlowEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/DataSnippet.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/DivideCheckSnippet.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/FPBinaryArithmeticAnalyser.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/FPCompareAnalyser.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/FPTreeEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/SIMDTreeEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/HelperCallSnippet.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/IA32LinkageUtils.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/IntegerMultiplyDecomposer.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRMemoryReference.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OpBinary.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OpNames.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OutlinedInstructions.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/RegisterRematerialization.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/SubtractAnalyser.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/Trampoline.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRTreeEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/UnaryEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86BinaryEncoding.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86Debug.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86FPConversionSnippet.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRInstruction.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRX86Instruction.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRMachine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRLinkage.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRegister.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRealRegister.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRegisterDependency.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRSnippet.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86SystemLinkage.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/XMMBinaryArithmeticAnalyser.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRCodeGenerator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRegisterIterator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/env/OMRDebugEnv.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/env/OMRCPU.cpp
-)
-endif()
+    list(APPEND OMR_JIT_SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/BinaryCommutativeAnalyser.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/BinaryEvaluator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/CompareAnalyser.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/ConstantDataSnippet.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/ControlFlowEvaluator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/DataSnippet.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/DivideCheckSnippet.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/FPBinaryArithmeticAnalyser.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/FPCompareAnalyser.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/FPTreeEvaluator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/SIMDTreeEvaluator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/HelperCallSnippet.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/IA32LinkageUtils.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/IntegerMultiplyDecomposer.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRMemoryReference.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OpBinary.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OpNames.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OutlinedInstructions.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/RegisterRematerialization.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/SubtractAnalyser.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/Trampoline.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRTreeEvaluator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/UnaryEvaluator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86BinaryEncoding.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86Debug.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86FPConversionSnippet.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRInstruction.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRX86Instruction.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRMachine.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRLinkage.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRegister.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRealRegister.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRegisterDependency.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRSnippet.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/X86SystemLinkage.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/XMMBinaryArithmeticAnalyser.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRCodeGenerator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/codegen/OMRRegisterIterator.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/env/OMRDebugEnv.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/x/env/OMRCPU.cpp
+    )
 
-# target/amd64.mk
-list(APPEND OMR_JIT_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRCodeGenerator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRMachine.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRMemoryReference.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRRealRegister.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRTreeEvaluator.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/AMD64SystemLinkage.cpp
-)
+    if(OMR_COMPILER_TARGET_SUBARCHITECTURE STREQUAL "amd64")
+        list(APPEND OMR_JIT_SOURCES
+            ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRCodeGenerator.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRMachine.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRMemoryReference.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRRealRegister.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRTreeEvaluator.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/AMD64SystemLinkage.cpp
+        )
+    elseif(OMR_COMPILER_TARGET_SUBARCHITECTURE STREQUAL "i386")
+        list(APPEND OMR_JIT_SOURCES
+            ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRCodeGenerator.cp
+            ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRMachine.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRRealRegister.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRTreeEvaluator.cpp
+            ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/IA32SystemLinkage.cpp
+        )
+    endif()
+endif()

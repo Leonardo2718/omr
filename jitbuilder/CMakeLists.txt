@@ -18,10 +18,12 @@
 
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
-#project(jitbuilder VERSION 0.0.1 LANGUAGES CXX)
 project(jitbuilder LANGUAGES CXX)
 
 set(OMR_COMPILER_TARGET_ARCHITECTURE "x")
+set(OMR_COMPILER_TARGET_SUBARCHITECTURE "amd64")
+set(OMR_COMPILER_HOST_ARCHITECTURE "x")
+set(OMR_COMPILER_HOST_SUBARCHITECTURE "amd64")
 
 set(OMRCompiler_DIR ../compiler)
 find_package(OMRCompiler REQUIRED)
@@ -73,7 +75,6 @@ add_definitions(
     -DJ9HAMMER
 )
 
-#add_custom_target(tr_build_name
 add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/TRBuildName.cpp
     COMMAND perl ${CMAKE_SOURCE_DIR}/build/scripts/generateVersion.pl tr.open.jitbuilder > ${CMAKE_BINARY_DIR}/TRBuildName.cpp
 )
@@ -89,19 +90,19 @@ list(APPEND OMR_JIT_SOURCES
     ${JIT_PRODUCT_DIR}/runtime/JBJitConfig.cpp
 )
 
-# host/x.mk
-list(APPEND OMR_JIT_SOURCES
-    ${JIT_PRODUCT_DIR}/x/runtime/AsmUtil64.asm
-)
+if(OMR_COMPILER_HOST_ARCHITECTURE STREQUAL "x")
+    list(APPEND OMR_JIT_SOURCES
+        ${JIT_PRODUCT_DIR}/x/runtime/AsmUtil64.asm
+    )
+endif()
 
-# target/x.mk
-list(APPEND OMR_JIT_SOURCES
-    ${JIT_PRODUCT_DIR}/x/codegen/Evaluator.cpp
-)
+if(OMR_COMPILER_TARGET_ARCHITECTURE STREQUAL "x")
+    list(APPEND OMR_JIT_SOURCES
+        ${JIT_PRODUCT_DIR}/x/codegen/Evaluator.cpp
+    )
+endif()
 
 add_library(jitbuilder STATIC
     ${CMAKE_BINARY_DIR}/TRBuildName.cpp
     ${OMR_JIT_SOURCES}
 )
-
-#add_dependencies(jitbuilder ${CMAKE_BINARY_DIR}/TRBuildName.cpp)
