@@ -42,6 +42,8 @@ include_directories(
     ${JIT_OMR_DIRTY_DIR}/..
 )
 
+set(CMAKE_POSITION_INDEPENDENT_CODE True)
+
 add_definitions(
     ${OMR_COMPILER_CXX_BASE_FLAGS}
     ${OMR_COMPILER_CXX_ERROR_FLAGS}

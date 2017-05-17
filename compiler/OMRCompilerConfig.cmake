@@ -38,7 +38,6 @@ set(OMR_COMPILER_CXX_ERROR_FLAGS
 )
 set(OMR_COMPILER_CXX_PLATFORM_FLAGS
     -m64
-    -fPIC
 )
 
 # common.mk
