@@ -29,19 +29,7 @@ set(OMRCompiler_DIR ../compiler)
 find_package(OMRCompiler REQUIRED)
 
 set(JIT_OMR_DIRTY_DIR ../compiler)
-set(JIT_PRODUCT_DIR ./)
-
-include_directories(
-    ../include_core
-    ${JIT_PRODUCT_DIR}/x/amd64
-    ${JIT_PRODUCT_DIR}/x
-    ${JIT_PRODUCT_DIR}
-    ${JIT_OMR_DIRTY_DIR}/x/amd64
-    ${JIT_OMR_DIRTY_DIR}/x
-    ${JIT_OMR_DIRTY_DIR}
-    ${JIT_OMR_DIRTY_DIR}/..
-)
-
+set(JIT_PRODUCT_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_POSITION_INDEPENDENT_CODE True)
 
 add_definitions(
@@ -95,5 +83,15 @@ endif()
 
 add_library(jitbuilder STATIC
     ${CMAKE_BINARY_DIR}/TRBuildName.cpp
+    ${OMR_COMPILER_SOURCES}
     ${OMR_JIT_SOURCES}
 )
+
+target_include_directories(jitbuilder PRIVATE
+    ../include_core
+    ${JIT_PRODUCT_DIR}/x/amd64
+    ${JIT_PRODUCT_DIR}/x
+    ${JIT_PRODUCT_DIR}
+    ${OMR_COMPILER_INCLUDE_DIRECTORIES}
+)
+

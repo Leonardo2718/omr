@@ -20,6 +20,18 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 project(OMRCompiler CXX)
 
+set(OMR_COMPILER_INCLUDE_DIRECTORIES
+    ${CMAKE_CURRENT_LIST_DIR}/x/amd64
+    ${CMAKE_CURRENT_LIST_DIR}/x
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/..
+)
+
+set(OMR_COMPILER_RTTI False)
+set(OMR_COMPILER_STRICT_ALIASING False)
+#set(OMR_COMPILER_THREADSAFE_STATICS False)
+set(OMR_COMPILER_FRAME_POINTER False)
+
 set(OMR_COMPILER_CXX_BASE_FLAGS
     -fno-rtti
     -fno-threadsafe-statics
@@ -41,7 +53,7 @@ set(OMR_COMPILER_CXX_PLATFORM_FLAGS
 )
 
 # common.mk
-list(APPEND OMR_JIT_SOURCES
+list(APPEND OMR_COMPILER_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/compile/OSRData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/compile/Method.cpp
     ${CMAKE_CURRENT_LIST_DIR}/compile/VirtualGuard.cpp
@@ -252,7 +264,7 @@ list(APPEND OMR_JIT_SOURCES
 )
 
 if(OMR_COMPILER_TARGET_ARCHITECTURE STREQUAL "x")
-    list(APPEND OMR_JIT_SOURCES
+    list(APPEND OMR_COMPILER_SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/x/codegen/BinaryCommutativeAnalyser.cpp
         ${CMAKE_CURRENT_LIST_DIR}/x/codegen/BinaryEvaluator.cpp
         ${CMAKE_CURRENT_LIST_DIR}/x/codegen/CompareAnalyser.cpp
@@ -296,7 +308,7 @@ if(OMR_COMPILER_TARGET_ARCHITECTURE STREQUAL "x")
     )
 
     if(OMR_COMPILER_TARGET_SUBARCHITECTURE STREQUAL "amd64")
-        list(APPEND OMR_JIT_SOURCES
+        list(APPEND OMR_COMPILER_SOURCES
             ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRCodeGenerator.cpp
             ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRMachine.cpp
             ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/OMRMemoryReference.cpp
@@ -305,7 +317,7 @@ if(OMR_COMPILER_TARGET_ARCHITECTURE STREQUAL "x")
             ${CMAKE_CURRENT_LIST_DIR}/x/amd64/codegen/AMD64SystemLinkage.cpp
         )
     elseif(OMR_COMPILER_TARGET_SUBARCHITECTURE STREQUAL "i386")
-        list(APPEND OMR_JIT_SOURCES
+        list(APPEND OMR_COMPILER_SOURCES
             ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRCodeGenerator.cp
             ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRMachine.cpp
             ${CMAKE_CURRENT_LIST_DIR}/x/i386/codegen/OMRRealRegister.cpp
