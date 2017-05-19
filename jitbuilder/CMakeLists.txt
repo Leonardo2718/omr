@@ -32,8 +32,14 @@ set(JIT_OMR_DIRTY_DIR ../compiler)
 set(JIT_PRODUCT_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_POSITION_INDEPENDENT_CODE True)
 
-add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/TRBuildName.cpp
-    COMMAND perl ${CMAKE_SOURCE_DIR}/build/scripts/generateVersion.pl tr.open.jitbuilder > ${CMAKE_BINARY_DIR}/TRBuildName.cpp
+set(BUILD_NAME_FILE ${CMAKE_BINARY_DIR}/TRBuildName.cpp)
+set_source_files_properties(${BUILD_NAME_FILE} PROPERTIES
+    GENERATED True
+)
+
+add_custom_target(jitbuilder_name_file ALL
+    COMMAND perl ${CMAKE_SOURCE_DIR}/build/scripts/generateVersion.pl tr.open.jitbuilder > ${BUILD_NAME_FILE}
+    BYPRODUCTS ${BUILD_NAME_FILE}
 )
 
 # common.mk
@@ -60,10 +66,12 @@ if(OMR_COMPILER_TARGET_ARCHITECTURE STREQUAL "x")
 endif()
 
 add_library(jitbuilder STATIC
-    ${CMAKE_BINARY_DIR}/TRBuildName.cpp
+    ${BUILD_NAME_FILE}
     ${OMR_COMPILER_SOURCES}
     ${OMR_JIT_SOURCES}
 )
+
+add_dependencies(jitbuilder jitbuilder_name_file)
 
 target_include_directories(jitbuilder PRIVATE
     ../include_core
@@ -73,12 +81,14 @@ target_include_directories(jitbuilder PRIVATE
     ${OMR_COMPILER_INCLUDE_DIRECTORIES}
 )
 
-target_compile_definitions(jitbuilder PRIVATE
+add_definitions(
     ${OMR_COMPILER_CXX_BASE_FLAGS}
     ${OMR_COMPILER_CXX_ERROR_FLAGS}
     ${OMR_COMPILER_CXX_PLATFORM_FLAGS}
     -O3
+)
 
+target_compile_definitions(jitbuilder PRIVATE
     -DBITVECTOR_BIT_NUMBERING_MSB
     -DUT_DIRECT_TRACE_REGISTRATION
     -DJITTEST

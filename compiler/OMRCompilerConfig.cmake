@@ -246,6 +246,7 @@ list(APPEND OMR_COMPILER_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/env/OMRIO.cpp
     ${CMAKE_CURRENT_LIST_DIR}/env/OMRKnownObjectTable.cpp
     ${CMAKE_CURRENT_LIST_DIR}/env/Globals.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/ilgen/IlValue.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ilgen/IlInjector.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ilgen/IlBuilder.cpp
     ${CMAKE_CURRENT_LIST_DIR}/ilgen/MethodBuilder.cpp
