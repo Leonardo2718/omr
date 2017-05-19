@@ -16,21 +16,12 @@
 ##    Multiple authors (IBM Corp.) - initial implementation and documentation
 ################################################################################
 
-cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-
-project(OMRCompiler CXX)
-
 set(OMR_COMPILER_INCLUDE_DIRECTORIES
     ${CMAKE_CURRENT_LIST_DIR}/x/amd64
     ${CMAKE_CURRENT_LIST_DIR}/x
     ${CMAKE_CURRENT_LIST_DIR}
     ${CMAKE_CURRENT_LIST_DIR}/..
 )
-
-set(OMR_COMPILER_RTTI False)
-set(OMR_COMPILER_STRICT_ALIASING False)
-#set(OMR_COMPILER_THREADSAFE_STATICS False)
-set(OMR_COMPILER_FRAME_POINTER False)
 
 set(OMR_COMPILER_CXX_BASE_FLAGS
     -fno-rtti
@@ -52,7 +43,6 @@ set(OMR_COMPILER_CXX_PLATFORM_FLAGS
     -m64
 )
 
-# common.mk
 list(APPEND OMR_COMPILER_SOURCES
     ${CMAKE_CURRENT_LIST_DIR}/compile/OSRData.cpp
     ${CMAKE_CURRENT_LIST_DIR}/compile/Method.cpp
