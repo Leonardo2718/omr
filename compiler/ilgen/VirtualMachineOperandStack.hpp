@@ -185,7 +185,9 @@ class VirtualMachineOperandStack : public VirtualMachineState
    void checkSize();
    void grow(int32_t growAmount = 0);
 
-   private:
+   virtual void StoreToStack(TR::IlBuilder *b, TR::IlValue *stack, TR::IlValue *offset, TR::IlValue *value);
+   virtual TR::IlValue *LoadFromStack(TR::IlBuilder *b, TR::IlValue *stack, TR::IlValue *offset);
+
    TR::MethodBuilder *_mb;
    OMR::VirtualMachineRegister *_stackTopRegister;
    int32_t _stackMax;

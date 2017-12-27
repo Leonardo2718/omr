@@ -74,9 +74,6 @@ VirtualMachineOperandStack::VirtualMachineOperandStack(OMR::VirtualMachineOperan
 void
 VirtualMachineOperandStack::Commit(TR::IlBuilder *b)
    {
-   TR::IlType *Element = _elementType;
-   TR::IlType *pElement = _mb->typeDictionary()->PointerTo(Element);
-
    TR::IlValue *stack = b->Load("OperandStack_base");
 
    // Adjust the vm _stackTopRegister by number of elements that have been pushed onto the stack.
@@ -88,30 +85,40 @@ VirtualMachineOperandStack::Commit(TR::IlBuilder *b)
       {
       // TBD: how to handle hitting the end of stack?
 
-      b->StoreAt(
-      b->   IndexAt(pElement,
-               stack,
-      b->      ConstInt32(i - _stackOffset)),
-            Pick(_stackTop-i)); // should generalize, maybe delegate element storage ?
+      StoreToStack(b, stack, b->ConstInt32(i - _stackOffset), Pick(_stackTop-i));
       }
    }
 
 void
 VirtualMachineOperandStack::Reload(TR::IlBuilder* b)
    {
-   TR::IlType* Element = _elementType;
-   TR::IlType* pElement = _mb->typeDictionary()->PointerTo(Element);
    // reload the elements back into the simulated operand stack
    // If the # of stack element has changed, the user should adjust the # of elements
    // using Drop beforehand to add/delete stack elements.
    TR::IlValue* stack = b->Load("OperandStack_base");
    for (int32_t i = _stackTop; i >= 0; i--)
       {
-      _stack[i] = b->LoadAt(pElement,
-                  b->   IndexAt(pElement,
-                           stack,
-                  b->      ConstInt32(i - _stackOffset)));
-       }
+      _stack[i] = LoadFromStack(b, stack, b->ConstInt32(i - _stackOffset));
+      }
+   }
+
+void
+VirtualMachineOperandStack::StoreToStack(TR::IlBuilder* b, TR::IlValue *stack, TR::IlValue *offset, TR::IlValue *value)
+   {
+   TR::IlType *Element = _elementType;
+   TR::IlType *pElement = _mb->typeDictionary()->PointerTo(Element);
+   b->StoreAt(
+   b->   IndexAt(pElement, stack, offset),
+         value);
+   }
+
+TR::IlValue *
+VirtualMachineOperandStack::LoadFromStack(TR::IlBuilder* b, TR::IlValue *stack, TR::IlValue *offset)
+   {
+   TR::IlType *Element = _elementType;
+   TR::IlType *pElement = _mb->typeDictionary()->PointerTo(Element);
+   return b->LoadAt(pElement,
+          b->   IndexAt(pElement, stack, offset));
    }
 
 void
