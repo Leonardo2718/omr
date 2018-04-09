@@ -233,12 +233,15 @@ JIT_PRODUCT_BACKEND_SOURCES+=\
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineRegister.cpp \
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineOperandArray.cpp \
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineOperandStack.cpp \
+    $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineState.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/Alignment.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/CodeCacheTypes.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/OMRCodeCache.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/OMRCodeCacheManager.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/OMRCodeCacheMemorySegment.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/OMRCodeCacheConfig.cpp \
+    $(JIT_OMR_DIRTY_DIR)/env/OMRCompilerEnv.cpp \
+    $(JIT_OMR_DIRTY_DIR)/env/PersistentAllocator.cpp \
     $(JIT_PRODUCT_DIR)/compile/Method.cpp \
     $(JIT_PRODUCT_DIR)/control/Jit.cpp \
     $(JIT_PRODUCT_DIR)/env/FrontEnd.cpp \
@@ -246,8 +249,43 @@ JIT_PRODUCT_BACKEND_SOURCES+=\
     $(JIT_PRODUCT_DIR)/optimizer/JBOptimizer.cpp \
     $(JIT_PRODUCT_DIR)/runtime/JBCodeCacheManager.cpp \
     $(JIT_PRODUCT_DIR)/runtime/JBJitConfig.cpp \
-    $(JIT_OMR_DIRTY_DIR)/env/OMRCompilerEnv.cpp \
-    $(JIT_OMR_DIRTY_DIR)/env/PersistentAllocator.cpp \
+
+LANGUAGE_BINDINGS_SOURCES+=\
+    $(JIT_PRODUCT_DIR)/client/SourceFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/JitBuilderAPI.cpp \
+    $(JIT_PRODUCT_DIR)/client/CFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/HeaderCFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/SourceCFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/C_Binding.cpp \
+    $(JIT_PRODUCT_DIR)/client/CPPFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/HeaderCPPFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/SourceCPPFile.cpp \
+    $(JIT_PRODUCT_DIR)/client/CPP_Binding.cpp \
+    $(JIT_PRODUCT_DIR)/client/genlab.cpp
+
+CPP_GENERATED_CLIENT_SOURCES+=\
+    $(JIT_PRODUCT_DIR)/client/cpp/BytecodeBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/IlBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/IlType.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/IlValue.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/MethodBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/TypeDictionary.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/VirtualMachineState.cpp
+
+CPP_CLIENT_SOURCES+=\
+    $(JIT_PRODUCT_DIR)/client/cpp/JitBuilder.cpp
+
+C_GENERATED_CLIENT_SOURCES+=\
+    $(JIT_PRODUCT_DIR)/client/c/BytecodeBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/IlBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/IlType.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/IlValue.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/MethodBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/TypeDictionary.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/VirtualMachineState.cpp
+
+C_CLIENT_SOURCES+=\
+    $(JIT_PRODUCT_DIR)/client/c/JitBuilder.cpp
 
 include $(JIT_MAKE_DIR)/files/host/$(HOST_ARCH).mk
 include $(JIT_MAKE_DIR)/files/target/$(TARGET_ARCH).mk
