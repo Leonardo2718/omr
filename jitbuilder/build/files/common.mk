@@ -233,6 +233,8 @@ JIT_PRODUCT_BACKEND_SOURCES+=\
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineRegister.cpp \
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineOperandArray.cpp \
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineOperandStack.cpp \
+    $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineRegister.cpp \
+    $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineRegisterInStruct.cpp \
     $(JIT_OMR_DIRTY_DIR)/ilgen/OMRVirtualMachineState.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/Alignment.cpp \
     $(JIT_OMR_DIRTY_DIR)/runtime/CodeCacheTypes.cpp \
@@ -269,7 +271,12 @@ CPP_GENERATED_CLIENT_SOURCES+=\
     $(JIT_PRODUCT_DIR)/client/cpp/IlType.cpp \
     $(JIT_PRODUCT_DIR)/client/cpp/IlValue.cpp \
     $(JIT_PRODUCT_DIR)/client/cpp/MethodBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/ThunkBuilder.cpp \
     $(JIT_PRODUCT_DIR)/client/cpp/TypeDictionary.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/VirtualMachineOperandArray.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/VirtualMachineOperandStack.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/VirtualMachineRegister.cpp \
+    $(JIT_PRODUCT_DIR)/client/cpp/VirtualMachineRegisterInStruct.cpp \
     $(JIT_PRODUCT_DIR)/client/cpp/VirtualMachineState.cpp
 
 CPP_CLIENT_SOURCES+=\
@@ -281,7 +288,12 @@ C_GENERATED_CLIENT_SOURCES+=\
     $(JIT_PRODUCT_DIR)/client/c/IlType.cpp \
     $(JIT_PRODUCT_DIR)/client/c/IlValue.cpp \
     $(JIT_PRODUCT_DIR)/client/c/MethodBuilder.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/ThunkBuilder.cpp \
     $(JIT_PRODUCT_DIR)/client/c/TypeDictionary.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/VirtualMachineOperandArray.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/VirtualMachineOperandStack.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/VirtualMachineRegister.cpp \
+    $(JIT_PRODUCT_DIR)/client/c/VirtualMachineRegisterInStruct.cpp \
     $(JIT_PRODUCT_DIR)/client/c/VirtualMachineState.cpp
 
 C_CLIENT_SOURCES+=\
