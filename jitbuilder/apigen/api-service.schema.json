@@ -1,2 +1,24 @@
 {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id":  "https://github.com/eclipse/omr/tree/master/jitbuilder/apigen/api-service.schema.json",
+    "title": "Project Jaguar: API Service Description Format",
+    "description": "Format for specifying API services",
+    "$comment": "Copyright (c) 2018 IBM Corp. and others (see LICENSE.md)",
+    "$comment": "SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception",
+    "type": "object",
+    "properties": {
+        "doc": { "description": "inline documentation for the service", "type": "string" },
+        "name": { "description": "the name of the service", "type": "string" },
+        "return": { "description": "return type of the service", "$ref": "api-type.schema.json" },
+        "parms": {
+            "description": "description of parameters of the service",
+            "type": "array",
+            "items": { "$ref": "api-type.schema.json" }
+        },
+        "flags": {
+            "description": "flags for the API service",
+            "enum": [ "protected", "public", "static", "virtual", "creatable", "callback", "create_impl", "has_extras_header", "allocates_class", "is_overidden" ]
+        }
+    },
+    "required": [ "name", "return", "parms", "flags" ]
 }
