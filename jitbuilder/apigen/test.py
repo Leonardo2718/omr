@@ -26,5 +26,10 @@ class ValidateSchemas(unittest.TestCase):
             schema = json.loads(f.read())
             Draft6Validator.check_schema(schema)
 
+    def test_api_class_schema(self):
+        with open('api-class.schema.json') as f:
+            schema = json.loads(f.read())
+            Draft6Validator.check_schema(schema)
+
 if __name__ == '__main__':
     unittest.main()
