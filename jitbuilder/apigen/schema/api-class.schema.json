@@ -17,6 +17,7 @@
             }
         },
         "name": { "description": "name of the API class", "type": "string" },
+        "short-name": { "description": "short for the class", "type": "string" },
         "types": {
             "description": "Definition of datatypes used by the API",
             "type": "array",
@@ -31,7 +32,11 @@
             "description": "Definition of services (functions, methods, etc.) offered by the API",
             "type": "array",
             "items": { "$ref": "api-service.schema.json" }
+        },
+        "flags": {
+            "description": "flags for the API service",
+            "enum": [ "creatable", "has_extras_header", "allocates_class" ]
         }
     },
-    "required": [ "name", "types", "fields", "services" ]
+    "required": [ "name", "types", "fields", "services", "flags" ]
 }
