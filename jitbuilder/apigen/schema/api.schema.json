@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id":  "https://github.com/Leonardo2718/omr/blob/jaguar/jitbuilder/apigen/schema/api.schema.json",
+    "$id":  "https://raw.githubusercontent.com/Leonardo2718/omr/jaguar/jitbuilder/apigen/schema/api.schema.json",
     "title": "Project Jaguar: API Description Format",
     "description": "Format for describing framework and library APIs in a way that allows simple generation of language bindings",
     "$comment": "Copyright (c) 2018 IBM Corp. and others (see LICENSE.md)",
