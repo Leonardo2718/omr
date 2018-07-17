@@ -1,9 +1,5 @@
 {
-    "version": {
-        "major": 0,
-        "minor": 0,
-        "patch": 0
-    },
+    "version": {},
     "namespace": "OMR::JitBuilder",
     "types": [],
     "fields": [],

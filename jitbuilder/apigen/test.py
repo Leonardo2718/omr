@@ -48,6 +48,10 @@ class ValidateSchemas(unittest.TestCase):
                 with open(path) as f, self.assertRaises(ValidationError):
                         validate(json.loads(f.read()), schema)
 
+    def test_minimal_api(self):
+        with open('schema/api.schema.json') as schema, open('test/minimal_api.json') as api:
+            validate(json.loads(api.read()), json.loads(schema.read()))
+
 class ValidateJitBuilderAPI(unittest.TestCase):
 
     def test_jitbuilder_api(self):
