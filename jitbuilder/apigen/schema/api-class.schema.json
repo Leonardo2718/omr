@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id":  "https://github.com/eclipse/omr/tree/master/jitbuilder/apigen/api-class.schema.json",
+    "$id":  "https://github.com/Leonardo2718/omr/blob/jaguar/jitbuilder/apigen/api-class.schema.json",
     "title": "Project Jaguar: API Class Description Format",
     "description": "Format for specifying API classes",
     "$comment": "Copyright (c) 2018 IBM Corp. and others (see LICENSE.md)",
