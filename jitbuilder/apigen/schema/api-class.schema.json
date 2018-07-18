@@ -7,17 +7,13 @@
     "$comment": "SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception",
     "type": "object",
     "properties": {
-        "version": {
-            "description": "Version of the API",
-            "type": "object",
-            "properties": {
-                "major": { "type": "integer", "minimum": 0 },
-                "minor": { "type": "integer", "minimum": 0 },
-                "patch": { "type": "integer", "minimum": 0 }
-            }
-        },
         "name": { "description": "name of the API class", "type": "string" },
         "short-name": { "description": "short for the class", "type": "string" },
+        "flags": {
+            "description": "flags for the API service",
+            "type": "array",
+            "items": { "enum": [ "creatable", "has_extras_header", "allocates_class" ] }
+        },
         "types": {
             "description": "Definition of datatypes used by the API",
             "type": "array",
@@ -32,11 +28,6 @@
             "description": "Definition of services (functions, methods, etc.) offered by the API",
             "type": "array",
             "items": { "$ref": "api-service.schema.json" }
-        },
-        "flags": {
-            "description": "flags for the API service",
-            "type": "array",
-            "items": { "enum": [ "creatable", "has_extras_header", "allocates_class" ] }
         }
     },
     "required": [ "name", "types", "fields", "services", "flags" ]
