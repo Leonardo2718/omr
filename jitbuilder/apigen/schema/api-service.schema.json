@@ -17,7 +17,8 @@
         },
         "flags": {
             "description": "flags for the API service",
-            "enum": [ "protected", "public", "static", "virtual", "callback", "create_impl", "is_overidden" ]
+            "type": "array",
+            "items": { "enum": [ "protected", "public", "static", "virtual", "callback", "create_impl", "is_overidden" ] }
         }
     },
     "required": [ "name", "return", "parms", "flags" ]
