@@ -35,7 +35,8 @@
         },
         "flags": {
             "description": "flags for the API service",
-            "enum": [ "creatable", "has_extras_header", "allocates_class" ]
+            "type": "array",
+            "items": { "enum": [ "creatable", "has_extras_header", "allocates_class" ] }
         }
     },
     "required": [ "name", "types", "fields", "services", "flags" ]
