@@ -114,12 +114,13 @@ def generate_class(writer, class_desc):
         writer.write(''.join(['#include "', name, 'ExtrasInsideClass.hpp"\n']))
     writer.write('};\n')
 
-def generate_classes(writer, class_descs):
-    for desc in class_descs:
-        generate_class(writer, desc)
+def generate_class_forward_decl(writer, class_desc):
+    name = class_desc["name"]
+    writer.write("class {};\n".format(name))
 
 with open("jitbuilder.api.json") as api_src, open("JitBuilder.hpp", "w") as target:
     api = json.load(api_src)
     target.write(copyright_header)
-    generate_classes(target, api["classes"])
+    map(lambda c: generate_class_forward_decl(target, c), api["classes"])
+    map(lambda c: generate_class(target, c), api["classes"])
 

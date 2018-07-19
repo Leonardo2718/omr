@@ -10,6 +10,54 @@
     "services": [],
     "classes": [
         {
+            "name": "IlType",
+            "short-name": "IT",
+            "flags": [],
+            "types": [],
+            "fields": [],
+            "services": []
+        },
+        {
+            "name": "IlValue",
+            "short-name": "IV",
+            "flags": [],
+            "types": [],
+            "fields": [],
+            "services": []
+        },
+        {
+            "name": "IlBuilder",
+            "short-name": "IB",
+            "flags": [],
+            "types": [],
+            "fields": [],
+            "services": []
+        },
+        {
+            "name": "MethodBuilder",
+            "short-name": "MB",
+            "flags": [],
+            "types": [],
+            "fields": [],
+            "services": []
+        },
+        {
+            "name": "BytecodeBuilder",
+            "short-name": "BB",
+            "flags": [],
+            "types": [],
+            "fields": [],
+            "services": []
+        },
+        {
+            "name": "ThunkBuilder",
+            "short-name": "TB",
+            "flags": [],
+            "types": [],
+            "fields": [],
+            "services": []
+        },
+        {
             "name": "TypeDictionary",
             "short-name": "TD",
             "flags": [ "creatable", "has_extras_header" ],
