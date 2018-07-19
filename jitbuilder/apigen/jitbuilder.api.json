@@ -48,25 +48,25 @@
                 { "name": "pWord", "type": "IlType", "assign_at_init": true }
                 ],
             "services": [
-                { "name": "Create", "flags": [ "public", "static" ], "return": "none", "parms": [ "pointer" ] },
+                { "name": "Create", "flags": [ "static" ], "return": "none", "parms": [ "pointer" ] },
                 { "name": "initializeFromImpl", "flags": [ "protected" ], "return": "none", "parms": [ "pointer" ] },
                 { "name": "Initialize", "flags": [ "public", "create_impl" ], "return": "none", "parms": [] },
-                { "name": "Destroy", "flags": [ "public" ], "return": "none", "parms": [] },
-                { "name": "CloseStruct", "flags": [ "public" ], "return": "none", "parms": [ "constString" ] },
-                { "name": "CloseStructWithSize", "flags": [ "public" ], "return": "none", "parms": [ "constString", "unsignedInteger" ] },
-                { "name": "CloseUnion", "flags": [ "public" ], "return": "none", "parms": [ "constString" ] },
-                { "name": "DefineField", "flags": [ "public" ], "return": "none", "parms": [ "constString", "constString", "IlType" ] },
-                { "name": "DefineFieldAtOffset", "flags": [ "public" ], "return": "none", "parms": [ "constString", "constString", "IlType", "unsignedInteger" ] },
-                { "name": "DefineStruct", "flags": [ "public" ], "return": "IlType", "parms": [ "constString" ] },
-                { "name": "DefineUnion", "flags": [ "public" ], "return": "IlType", "parms": [ "constString" ] },
-                { "name": "GetFieldType", "flags": [ "public" ], "return": "IlType", "parms": [ "constString", "constString" ] },
-                { "name": "LookupStruct", "flags": [ "public" ], "return": "IlType", "parms": [ "constString" ] },
-                { "name": "LookupUnion", "flags": [ "public" ], "return": "IlType", "parms": [ "constString" ] },
-                { "name": "OffsetOf", "flags": [ "public" ], "return": "unsignedInteger", "parms": [ "constString", "constString" ] },
-                { "name": "PointerTo", "flags": [ "public" ], "return": "IlType", "parms": [ "IlType" ] },
-                { "name": "PointerToStructName", "flags": [ "public" ], "return": "IlType", "parms": [ "constString" ] },
-                { "name": "UnionField", "flags": [ "public" ], "return": "none", "parms": [ "constString", "constString", "IlType" ] },
-                { "name": "UnionFieldType", "flags": [ "public" ], "return": "IlType", "parms": [ "constString", "constString" ] }
+                { "name": "Destroy", "flags": [], "return": "none", "parms": [] },
+                { "name": "CloseStruct", "flags": [], "return": "none", "parms": [ "constString" ] },
+                { "name": "CloseStructWithSize", "flags": [], "return": "none", "parms": [ "constString", "unsignedInteger" ] },
+                { "name": "CloseUnion", "flags": [], "return": "none", "parms": [ "constString" ] },
+                { "name": "DefineField", "flags": [], "return": "none", "parms": [ "constString", "constString", "IlType" ] },
+                { "name": "DefineFieldAtOffset", "flags": [], "return": "none", "parms": [ "constString", "constString", "IlType", "unsignedInteger" ] },
+                { "name": "DefineStruct", "flags": [], "return": "IlType", "parms": [ "constString" ] },
+                { "name": "DefineUnion", "flags": [], "return": "IlType", "parms": [ "constString" ] },
+                { "name": "GetFieldType", "flags": [], "return": "IlType", "parms": [ "constString", "constString" ] },
+                { "name": "LookupStruct", "flags": [], "return": "IlType", "parms": [ "constString" ] },
+                { "name": "LookupUnion", "flags": [], "return": "IlType", "parms": [ "constString" ] },
+                { "name": "OffsetOf", "flags": [], "return": "unsignedInteger", "parms": [ "constString", "constString" ] },
+                { "name": "PointerTo", "flags": [], "return": "IlType", "parms": [ "IlType" ] },
+                { "name": "PointerToStructName", "flags": [], "return": "IlType", "parms": [ "constString" ] },
+                { "name": "UnionField", "flags": [], "return": "none", "parms": [ "constString", "constString", "IlType" ] },
+                { "name": "UnionFieldType", "flags": [], "return": "IlType", "parms": [ "constString", "constString" ] }
             ]
         }
         ]
