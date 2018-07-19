@@ -86,6 +86,39 @@ def generate_fields(writer, fields, with_visibility = True):
         generate_field(writer, field, with_visibility)
         writer.write("\n")
 
+def generate_service(writer, service, with_visibility = True):
+    """Generate a service from tis description"""
+    vis = "" if not with_visibility else "protected:" if "protected" in service["flags"] else "public:"
+    static = "static" if "static" in service["flags"] else ""
+    ret = type_map[service["return"]]
+    name = service["name"]
+    parms = ", ".join([ type_map[t] for t in service["parms"] ])
+    writer.write(" ".join([vis, static, ret, name, "(", parms, ");"]))
+
+def generate_services(writer, services, with_visibility = True):
+    """Generate a list of services"""
+    for service in services:
+        generate_service(writer, service, with_visibility)
+        writer.write("\n")
+
+def generate_class(writer, class_desc):
+    name = class_desc["name"]
+    has_extras = "has_extras_header" in class_desc["flags"]
+
+    if has_extras:
+        writer.write(''.join(['#include "', name, 'ExtrasOutsideClass.hpp"\n']))
+    writer.write(' '.join(["class", name, "{\n"]))
+    generate_fields(writer, class_desc["fields"])
+    generate_services(writer, class_desc["services"])
+    if has_extras:
+        writer.write(''.join(['#include "', name, 'ExtrasInsideClass.hpp"\n']))
+    writer.write('};\n')
+
+def generate_classes(writer, class_descs):
+    for desc in class_descs:
+        generate_class(writer, desc)
+
 with open("jitbuilder.api.json") as f:
     obj = json.load(f)
-    generate_fields(sys.stdout, obj["classes"][0]["fields"])
+    generate_classes(sys.stdout, obj["classes"])
+
