@@ -118,7 +118,8 @@ def generate_classes(writer, class_descs):
     for desc in class_descs:
         generate_class(writer, desc)
 
-with open("jitbuilder.api.json") as f:
-    obj = json.load(f)
-    generate_classes(sys.stdout, obj["classes"])
+with open("jitbuilder.api.json") as api_src, open("JitBuilder.hpp", "w") as target:
+    api = json.load(api_src)
+    target.write(copyright_header)
+    generate_classes(target, api["classes"])
 
