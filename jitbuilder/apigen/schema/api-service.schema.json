@@ -16,7 +16,7 @@
             "items": {
                 "type": "object",
                 "properties": {
-                    "name": "string",
+                    "name": { "type": "string" },
                     "type": { "$ref": "api-type.schema.json" }
                 },
                 "required": [ "name", "type" ]
