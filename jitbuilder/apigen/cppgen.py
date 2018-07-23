@@ -119,9 +119,12 @@ def generate_class_forward_decl(writer, class_desc):
     name = class_desc["name"]
     writer.write("class {};\n".format(name))
 
-with open("jitbuilder.api.json") as api_src, open("JitBuilder.hpp", "w") as target:
+with open("jitbuilder.api.json") as api_src:
     api = json.load(api_src)
-    target.write(copyright_header)
-    map(lambda c: generate_class_forward_decl(target, c), api["classes"])
-    map(lambda c: generate_class(target, c), api["classes"])
+    with open("JitBuilder.hpp", "w") as target:
+        target.write(copyright_header)
+        map(lambda c: generate_class_forward_decl(target, c), api["classes"])
+        map(lambda c: generate_class(target, c), api["classes"])
+    with open("JitBuilder.cpp", "w") as target:
+        target.write(copyright_header)
 
