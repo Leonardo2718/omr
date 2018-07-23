@@ -121,10 +121,25 @@ def generate_class_forward_decl(writer, class_desc):
 
 with open("jitbuilder.api.json") as api_src:
     api = json.load(api_src)
+
     with open("JitBuilder.hpp", "w") as target:
         target.write(copyright_header)
+
+        for n in api["namespace"]:
+            target.write("namespace {} {{\n".format(n))
+
         map(lambda c: generate_class_forward_decl(target, c), api["classes"])
         map(lambda c: generate_class(target, c), api["classes"])
+
+        for n in api["namespace"]:
+            target.write("}} // {}\n".format(n))
+
     with open("JitBuilder.cpp", "w") as target:
         target.write(copyright_header)
+
+        for n in api["namespace"]:
+            target.write("namespace {} {{\n".format(n))
+
+        for n in api["namespace"]:
+            target.write("}} // {}\n".format(n))
 
