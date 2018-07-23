@@ -25,6 +25,8 @@ copyright_header = """
  *******************************************************************************/
 """
 
+# Generic utilities ##################################################
+
 # mapping between API type descriptions and C++ data types
 type_map = { "none": "void"
            , "boolean": "bool"
@@ -73,6 +75,11 @@ type_map = { "none": "void"
            , "VirtualMachineStateImpl": "TR::VirtualMachineState *"
            }
 
+def generate_include(path):
+    return '#include "{}"\n'.format(path)
+
+# header utilities ###################################################
+
 def generate_field(writer, field, with_visibility = True):
     """Generate a field from its description"""
     t = type_map[field["type"]]
@@ -102,9 +109,6 @@ def generate_services(writer, services, with_visibility = True):
         generate_service(writer, service, with_visibility)
         writer.write("\n")
 
-def generate_include(path):
-    return '#include "{}"\n'.format(path)
-
 def generate_class(writer, class_desc):
     name = class_desc["name"]
     has_extras = "has_extras_header" in class_desc["flags"]
@@ -122,29 +126,112 @@ def generate_class_forward_decl(writer, class_desc):
     name = class_desc["name"]
     writer.write("class {};\n".format(name))
 
-with open("jitbuilder.api.json") as api_src:
-    api = json.load(api_src)
+def write_header(writier, api):
+    target.write(copyright_header)
 
-    with open("JitBuilder.hpp", "w") as target:
-        target.write(copyright_header)
+    for n in api["namespace"]:
+        target.write("namespace {} {{\n".format(n))
 
-        for n in api["namespace"]:
-            target.write("namespace {} {{\n".format(n))
+    for c in api["classes"]:
+        generate_class_forward_decl(target, c)
+    for c in api["classes"]:
+        generate_class(target, c)
 
-        for c in api["classes"]:
-            generate_class_forward_decl(target, c)
-        for c in api["classes"]:
-            generate_class(target, c)
+    for n in api["namespace"]:
+        target.write("}} // {}\n".format(n))
 
-        for n in api["namespace"]:
-            target.write("}} // {}\n".format(n))
+# source utilities ###################################################
 
-    with open("JitBuilder.cpp", "w") as target:
-        target.write(copyright_header)
+def needs_impl(t):
+    return t in [ "BytecodeBuilder"
+                , "IlBuilder"
+                , "MethodBuilder"
+                , "IlType"
+                , "IlValue"
+                , "TypeDictionary"
+                , "VirtualMachineState"
+                ]
 
-        for n in api["namespace"]:
-            target.write("namespace {} {{\n".format(n))
+def grab_impl(v, t):
+    return "{v} != NULL ? {v}->_impl : NULL".format(v=v) if needs_impl(t) else v
 
-        for n in api["namespace"]:
-            target.write("}} // {}\n".format(n))
+def write_service_impl(writer, desc, class_name):
+    rtype = type_map[desc["return"]]
+    name = desc["name"]
+    gen_parm = lambda p: "{t} {n}".format(t=type_map[p["type"]],n=p["name"])
+    parms = ", ".join([ gen_parm(p) for p in desc["parms"] ])
+    writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
+
+    args = ", ".join([ grab_impl(a["name"], a["type"]) for a in desc["parms"] ])
+    impl_call = "reinterpret_cast<TR::{cname} *>(_impl)->{sname}({args})".format(cname=class_name,sname=name,args=args)
+    if "none" == desc["return"]:
+        writer.write(impl_call + ";\n");
+    else:
+        writer.write("{rtype} implRet = {call};\n".format(rtype=rtype, call=impl_call))
+        writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
+        writer.write("return clientObj;\n")
+
+    writer.write("}\n")
+
+def write_class_impl(writer, class_desc):
+    for s in class_desc["services"]:
+        write_service_impl(writer, s, class_desc["name"])
+        writer.write("\n")
+
+def write_source(writer, api):
+    target.write(copyright_header)
+    writer.write("\n")
+
+    # don't bother checking what headers are needed, include everything
+    trheaders = [ "ilgen/BytecodeBuilder.hpp"
+                , "ilgen/IlBuilder.hpp"
+                , "ilgen/IlType.hpp"
+                , "ilgen/IlValue.hpp"
+                , "ilgen/MethodBuilder.hpp"
+                , "ilgen/ThunkBuilder.hpp"
+                , "ilgen/TypeDictionary.hpp"
+                , "ilgen/VirtualMachineOperandArray.hpp"
+                , "ilgen/VirtualMachineOperandStack.hpp"
+                , "ilgen/VirtualMachineRegister.hpp"
+                , "ilgen/VirtualMachineRegisterInStruct.hpp"
+                , "ilgen/VirtualMachineState.hpp"
+                , "client/cpp/Callbacks.hpp"
+                , "client/cpp/Macros.hpp"
+                , "release/cpp/include/BytecodeBuilder.hpp"
+                , "release/cpp/include/IlBuilder.hpp"
+                , "release/cpp/include/IlReference.hpp"
+                , "release/cpp/include/IlType.hpp"
+                , "release/cpp/include/IlValue.hpp"
+                , "release/cpp/include/MethodBuilder.hpp"
+                , "release/cpp/include/ThunkBuilder.hpp"
+                , "release/cpp/include/TypeDictionary.hpp"
+                , "release/cpp/include/VirtualMachineOperandArray.hpp"
+                , "release/cpp/include/VirtualMachineOperandStack.hpp"
+                , "release/cpp/include/VirtualMachineRegister.hpp"
+                , "release/cpp/include/VirtualMachineRegisterInStruct.hpp"
+                , "release/cpp/include/VirtualMachineState.hpp"
+                ]
+    for h in trheaders:
+        writer.write(generate_include(h))
+    writer.write("\n")
+
+    for n in api["namespace"]:
+        target.write("namespace {} {{\n".format(n))
+    writer.write("\n")
+
+    for c in api["classes"]:
+        write_class_impl(writer, c)
+
+    for n in api["namespace"]:
+        target.write("}} // {}\n".format(n))
+
+# main generator #####################################################
+
+if __name__ == "__main__":
+    with open("jitbuilder.api.json") as api_src:
+        api = json.load(api_src)
+        with open("JitBuilder.hpp", "w") as target:
+            write_header(target, api)
+        with open("JitBuilder.cpp", "w") as target:
+            write_source(target, api)
 
