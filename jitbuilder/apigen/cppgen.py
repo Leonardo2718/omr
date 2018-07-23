@@ -89,12 +89,12 @@ def generate_fields(writer, fields, with_visibility = True):
 
 def generate_service(writer, service, with_visibility = True):
     """Generate a service from tis description"""
-    vis = "" if not with_visibility else "protected:" if "protected" in service["flags"] else "public:"
+    vis = "" if not with_visibility else "protected" if "protected" in service["flags"] else "public"
     static = "static" if "static" in service["flags"] else ""
     ret = type_map[service["return"]]
     name = service["name"]
-    parms = ", ".join([ type_map[t] for t in service["parms"] ])
-    writer.write(" ".join([vis, static, ret, name, "(", parms, ");"]))
+    parms = ", ".join([ type_map[p["type"]] for p in service["parms"] ])
+    writer.write("{visibility}: {qualifier} {rtype} {name}({parms});".format(visibility=vis, qualifier=static, rtype=ret, name=name, parms=parms))
 
 def generate_services(writer, services, with_visibility = True):
     """Generate a list of services"""
@@ -128,8 +128,10 @@ with open("jitbuilder.api.json") as api_src:
         for n in api["namespace"]:
             target.write("namespace {} {{\n".format(n))
 
-        map(lambda c: generate_class_forward_decl(target, c), api["classes"])
-        map(lambda c: generate_class(target, c), api["classes"])
+        for c in api["classes"]:
+            generate_class_forward_decl(target, c)
+        for c in api["classes"]:
+            generate_class(target, c)
 
         for n in api["namespace"]:
             target.write("}} // {}\n".format(n))
