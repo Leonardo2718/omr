@@ -77,8 +77,8 @@ def generate_field(writer, field, with_visibility = True):
     """Generate a field from its description"""
     t = type_map[field["type"]]
     n = field["name"]
-    v = "public:" if with_visibility else ""
-    writer.write(" ".join([v, t, n, ";"]))
+    v = "public" if with_visibility else ""
+    writer.write("{visibility}: {type} {name}; ".format(visibility=v, type=t, name=n))
 
 def generate_fields(writer, fields, with_visibility = True):
     """Generate a list of fields"""
@@ -102,17 +102,20 @@ def generate_services(writer, services, with_visibility = True):
         generate_service(writer, service, with_visibility)
         writer.write("\n")
 
+def generate_include(path):
+    return '#include "{}"\n'.format(path)
+
 def generate_class(writer, class_desc):
     name = class_desc["name"]
     has_extras = "has_extras_header" in class_desc["flags"]
 
     if has_extras:
-        writer.write(''.join(['#include "', name, 'ExtrasOutsideClass.hpp"\n']))
-    writer.write(' '.join(["class", name, "{\n"]))
+        writer.write(generate_include('ExtrasOutsideClass.hpp'))
+    writer.write("class {name} {{\n".format(name=name))
     generate_fields(writer, class_desc["fields"])
     generate_services(writer, class_desc["services"])
     if has_extras:
-        writer.write(''.join(['#include "', name, 'ExtrasInsideClass.hpp"\n']))
+        writer.write(generate_include('ExtrasInsideClass.hpp'))
     writer.write('};\n')
 
 def generate_class_forward_decl(writer, class_desc):
