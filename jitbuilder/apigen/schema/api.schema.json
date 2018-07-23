@@ -17,7 +17,7 @@
             },
             "required": [ "major", "minor", "patch" ]
         },
-        "namespace": { "description": "Namespace containing the API", "type": "string" },
+        "namespace": { "description": "Namespace containing the API", "type": "array", "items": { "type": "string" } },
         "types": {
             "description": "Definition of datatypes used by the API",
             "type": "array",
