@@ -24,11 +24,16 @@
             "type": "array",
             "items": { "$ref": "api-field.schema.json" }
         },
+        "constructors": {
+            "description": "Definition of class constructors",
+            "type": "array",
+            "items": { "$ref": "api-service.schema.json" }
+        },
         "services": {
             "description": "Definition of services (functions, methods, etc.) offered by the API",
             "type": "array",
             "items": { "$ref": "api-service.schema.json" }
         }
     },
-    "required": [ "name", "types", "fields", "services", "flags" ]
+    "required": [ "name", "types", "fields", "constructors", "services", "flags" ]
 }
