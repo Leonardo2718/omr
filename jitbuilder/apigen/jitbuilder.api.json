@@ -63,7 +63,6 @@
             "flags": [ "creatable", "has_extras_header" ],
             "types": [],
             "fields": [
-                { "name": "_impl", "type": "pointer", "assign_at_init": false },
                 { "name": "NoType", "type": "IlType", "assign_at_init": true },
                 { "name": "Int8", "type": "IlType", "assign_at_init": true },
                 { "name": "Int16", "type": "IlType", "assign_at_init": true },

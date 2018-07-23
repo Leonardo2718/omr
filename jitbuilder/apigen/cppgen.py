@@ -85,6 +85,7 @@ def generate_fields(writer, fields, with_visibility = True):
     for field in fields:
         generate_field(writer, field, with_visibility)
         writer.write("\n")
+    writer.write("public: void* _impl\n")
 
 def generate_service(writer, service, with_visibility = True):
     """Generate a service from tis description"""
