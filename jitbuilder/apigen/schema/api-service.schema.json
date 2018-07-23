@@ -13,7 +13,14 @@
         "parms": {
             "description": "description of parameters of the service",
             "type": "array",
-            "items": { "$ref": "api-type.schema.json" }
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": "string",
+                    "type": { "$ref": "api-type.schema.json" }
+                },
+                "required": [ "name", "type" ]
+            }
         },
         "flags": {
             "description": "flags for the API service",
