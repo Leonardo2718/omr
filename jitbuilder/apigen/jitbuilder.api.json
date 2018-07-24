@@ -101,12 +101,7 @@
                 { "name": "pWord", "type": "IlType", "assign_at_init": true }
                 ],
             "constructors": [
-                { "name": "Create"
-                , "flags": [ "static" ]
-                , "return": "none"
-                , "parms": [ { "name":"impl","type":"pointer"} ]
-                },
-                { "name": "Initialize"
+                { "name": ""
                 , "flags": [ "public", "create_impl" ]
                 , "return": "none"
                 , "parms": []

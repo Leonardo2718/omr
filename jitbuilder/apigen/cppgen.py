@@ -78,6 +78,26 @@ type_map = { "none": "void"
 def generate_include(path):
     return '#include "{}"\n'.format(path)
 
+def needs_impl(t):
+    return t in [ "BytecodeBuilder"
+                , "IlBuilder"
+                , "MethodBuilder"
+                , "IlType"
+                , "IlValue"
+                , "TypeDictionary"
+                , "VirtualMachineState"
+                ]
+
+def grab_impl(v, t):
+    return "{v} != NULL ? {v}->_impl : NULL".format(v=v) if needs_impl(t) else v
+
+def generate_parm_list(parms_desc):
+    gen_parm = lambda p: "{t} {n}".format(t=type_map[p["type"]],n=p["name"])
+    return ", ".join([ gen_parm(p) for p in parms_desc ])
+
+def generate_arg_list(parms_desc):
+    return ", ".join([ grab_impl(a["name"], a["type"]) for a in parms_desc ])
+
 # header utilities ###################################################
 
 def write_field(writer, field, with_visibility = True):
@@ -93,12 +113,12 @@ def write_service(writer, service, with_visibility = True):
     static = "static" if "static" in service["flags"] else ""
     ret = type_map[service["return"]]
     name = service["name"]
-    parms = ", ".join([ type_map[p["type"]] for p in service["parms"] ])
+    parms = generate_parm_list(service["parms"])
     writer.write("{visibility}: {qualifier} {rtype} {name}({parms});".format(visibility=vis, qualifier=static, rtype=ret, name=name, parms=parms))
 
 def write_ctor_decl(writer, ctor_desc, class_name):
     v = "protected" if "protected" in ctor_desc["flags"] else "public"
-    parms = ", ".join([ type_map[p["type"]] for p in ctor_desc["parms"] ])
+    parms = generate_parm_list(ctor_desc["parms"])
     writer.write("{visibility}: {name}({parms});\n".format(visibility=v, name=class_name, parms=parms))
 
 def write_class(writer, class_desc):
@@ -152,27 +172,13 @@ def write_header(writer, api):
 
 # source utilities ###################################################
 
-def needs_impl(t):
-    return t in [ "BytecodeBuilder"
-                , "IlBuilder"
-                , "MethodBuilder"
-                , "IlType"
-                , "IlValue"
-                , "TypeDictionary"
-                , "VirtualMachineState"
-                ]
-
-def grab_impl(v, t):
-    return "{v} != NULL ? {v}->_impl : NULL".format(v=v) if needs_impl(t) else v
-
 def write_service_impl(writer, desc, class_name):
     rtype = type_map[desc["return"]]
     name = desc["name"]
-    gen_parm = lambda p: "{t} {n}".format(t=type_map[p["type"]],n=p["name"])
-    parms = ", ".join([ gen_parm(p) for p in desc["parms"] ])
+    parms = generate_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
 
-    args = ", ".join([ grab_impl(a["name"], a["type"]) for a in desc["parms"] ])
+    args = generate_arg_list(desc["parms"])#", ".join([ grab_impl(a["name"], a["type"]) for a in desc["parms"] ])
     impl_call = "reinterpret_cast<TR::{cname} *>(_impl)->{sname}({args})".format(cname=class_name,sname=name,args=args)
     if "none" == desc["return"]:
         writer.write(impl_call + ";\n");
@@ -184,8 +190,35 @@ def write_service_impl(writer, desc, class_name):
     writer.write("}\n")
 
 def write_class_impl(writer, class_desc):
+    cname = class_desc["name"]
+
+    # write constructor definitions
+    for ctor in class_desc["constructors"]:
+        parms = generate_parm_list(ctor["parms"])
+        writer.write("{cname}::{cname}({parms}) {{\n".format(cname=cname, parms=parms))
+        args = generate_arg_list(ctor["parms"])
+        writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
+        writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n");
+        writer.write("initializeFromImpl(_impl);\n")
+        writer.write("}\n\n")
+
+        parms = "void * impl" + "" if parms == "" else "," + parms
+        writer.write("{cname}::{cname}({parms}) {{\n".format(cname=cname, parms=parms))
+        args = "impl" + "" if args == "" else "," + args
+        writer.write("if (imple != NULL) {\n")
+        writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n");
+        writer.write("initializeFromImpl(impl);\n")
+        writer.write("}\n")
+        writer.write("}\n")
+    writer.write("\n")
+
+    # write destructor definition
+    writer.write("{cname}::~{cname}() {{}}\n".format(cname=cname))
+    writer.write("\n")
+
+    # write service definitions
     for s in class_desc["services"]:
-        write_service_impl(writer, s, class_desc["name"])
+        write_service_impl(writer, s, cname)
         writer.write("\n")
 
 def write_source(writer, api):
