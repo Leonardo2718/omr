@@ -80,21 +80,14 @@ def generate_include(path):
 
 # header utilities ###################################################
 
-def generate_field(writer, field, with_visibility = True):
+def write_field(writer, field, with_visibility = True):
     """Generate a field from its description"""
     t = type_map[field["type"]]
     n = field["name"]
     v = "public" if with_visibility else ""
     writer.write("{visibility}: {type} {name}; ".format(visibility=v, type=t, name=n))
 
-def generate_fields(writer, fields, with_visibility = True):
-    """Generate a list of fields"""
-    for field in fields:
-        generate_field(writer, field, with_visibility)
-        writer.write("\n")
-    writer.write("public: void* _impl\n")
-
-def generate_service(writer, service, with_visibility = True):
+def write_service(writer, service, with_visibility = True):
     """Generate a service from tis description"""
     vis = "" if not with_visibility else "protected" if "protected" in service["flags"] else "public"
     static = "static" if "static" in service["flags"] else ""
@@ -103,39 +96,56 @@ def generate_service(writer, service, with_visibility = True):
     parms = ", ".join([ type_map[p["type"]] for p in service["parms"] ])
     writer.write("{visibility}: {qualifier} {rtype} {name}({parms});".format(visibility=vis, qualifier=static, rtype=ret, name=name, parms=parms))
 
-def generate_services(writer, services, with_visibility = True):
-    """Generate a list of services"""
-    for service in services:
-        generate_service(writer, service, with_visibility)
-        writer.write("\n")
+def write_ctor_decl(writer, ctor_desc, class_name):
+    v = "protected" if "protected" in ctor_desc["flags"] else "public"
+    parms = ", ".join([ type_map[p["type"]] for p in ctor_desc["parms"] ])
+    writer.write("{visibility}: {name}({parms});\n".format(visibility=v, name=class_name, parms=parms))
 
-def generate_class(writer, class_desc):
+def write_class(writer, class_desc):
     name = class_desc["name"]
     has_extras = "has_extras_header" in class_desc["flags"]
 
     if has_extras:
         writer.write(generate_include('ExtrasOutsideClass.hpp'))
     writer.write("class {name} {{\n".format(name=name))
-    generate_fields(writer, class_desc["fields"])
-    generate_services(writer, class_desc["services"])
+
+    # write fields
+    for field in class_desc["fields"]:
+        write_field(writer, field)
+        writer.write("\n")
+
+    # write needed impl field
+    writer.write("public: void* _impl\n")
+
+    for ctor in class_desc["constructors"]:
+        write_ctor_decl(writer, ctor, name)
+
+    # write destructor declaration
+    writer.write("public: ~{name}();\n".format(name=name))
+
+    for service in class_desc["services"]:
+        write_service(writer, service)
+        writer.write("\n")
+
     if has_extras:
         writer.write(generate_include('ExtrasInsideClass.hpp'))
+
     writer.write('};\n')
 
-def generate_class_forward_decl(writer, class_desc):
-    name = class_desc["name"]
-    writer.write("class {};\n".format(name))
-
-def write_header(writier, api):
-    target.write(copyright_header)
+def write_header(writer, api):
+    writer.write(copyright_header)
 
     for n in api["namespace"]:
-        target.write("namespace {} {{\n".format(n))
+        writer.write("namespace {} {{\n".format(n))
 
+    # write call forward declarations
     for c in api["classes"]:
-        generate_class_forward_decl(target, c)
+        name = c["name"]
+        writer.write("class {};\n".format(name))
+
+    # write classes
     for c in api["classes"]:
-        generate_class(target, c)
+        write_class(target, c)
 
     for n in api["namespace"]:
         target.write("}} // {}\n".format(n))

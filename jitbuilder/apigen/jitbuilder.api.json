@@ -100,22 +100,23 @@
                 { "name": "pVectorDouble", "type": "IlType", "assign_at_init": true },
                 { "name": "pWord", "type": "IlType", "assign_at_init": true }
                 ],
-            "constructors": [],
-            "services": [
+            "constructors": [
                 { "name": "Create"
                 , "flags": [ "static" ]
                 , "return": "none"
                 , "parms": [ { "name":"impl","type":"pointer"} ]
                 },
-                { "name": "initializeFromImpl"
-                , "flags": [ "protected" ]
-                , "return": "none"
-                , "parms": [ {"name":"impl","type":"pointer"} ]
-                },
                 { "name": "Initialize"
                 , "flags": [ "public", "create_impl" ]
                 , "return": "none"
                 , "parms": []
+                }
+                ],
+            "services": [
+                { "name": "initializeFromImpl"
+                , "flags": [ "protected" ]
+                , "return": "none"
+                , "parms": [ {"name":"impl","type":"pointer"} ]
                 },
                 { "name": "Destroy"
                 , "flags": []
