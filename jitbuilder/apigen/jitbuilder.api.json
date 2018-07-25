@@ -108,11 +108,6 @@
                 }
                 ],
             "services": [
-                { "name": "initializeFromImpl"
-                , "flags": [ "protected" ]
-                , "return": "none"
-                , "parms": [ {"name":"impl","type":"pointer"} ]
-                },
                 { "name": "Destroy"
                 , "flags": []
                 , "return": "none"

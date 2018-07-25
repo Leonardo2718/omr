@@ -143,6 +143,9 @@ def write_class(writer, class_desc):
     for ctor in class_desc["constructors"]:
         write_ctor_decl(writer, ctor, name)
 
+    # write impl init service delcaration
+    writer.write("protected: void initializeFromImpl(void * impl);\n")
+
     # write destructor declaration
     writer.write("public: ~{name}();\n".format(name=name))
 
@@ -214,6 +217,14 @@ def write_class_impl(writer, class_desc):
         writer.write("}\n")
         writer.write("}\n")
     writer.write("\n")
+
+    writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=cname))
+    writer.write("_impl = impl;\n")
+    for field in class_desc["fields"]:
+        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, reinterpret_cast<TR::{cname} *>(_impl)->{fname});\n"
+        writer.write(fmt.format(fname=field["name"], ftype=field["type"], cname=cname))
+        writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
+    writer.write("}\n")
 
     # write destructor definition
     writer.write("{cname}::~{cname}() {{}}\n".format(cname=cname))
