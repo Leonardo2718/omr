@@ -161,24 +161,6 @@ def write_class_def(writer, class_desc):
 
     writer.write('};\n')
 
-def write_header(writer, api):
-    writer.write(copyright_header)
-
-    for n in api["namespace"]:
-        writer.write("namespace {} {{\n".format(n))
-
-    # write call forward declarations
-    for c in api["classes"]:
-        name = c["name"]
-        writer.write("class {};\n".format(name))
-
-    # write classes
-    for c in api["classes"]:
-        write_class_def(target, c)
-
-    for n in api["namespace"]:
-        target.write("}} // {}\n".format(n))
-
 # source utilities ###################################################
 
 def write_service_impl(writer, desc, class_name):
@@ -237,53 +219,6 @@ def write_class_impl(writer, class_desc):
     for s in class_desc["services"]:
         write_service_impl(writer, s, cname)
         writer.write("\n")
-
-def write_source(writer, api):
-    target.write(copyright_header)
-    writer.write("\n")
-
-    # don't bother checking what headers are needed, include everything
-    trheaders = [ "ilgen/BytecodeBuilder.hpp"
-                , "ilgen/IlBuilder.hpp"
-                , "ilgen/IlType.hpp"
-                , "ilgen/IlValue.hpp"
-                , "ilgen/MethodBuilder.hpp"
-                , "ilgen/ThunkBuilder.hpp"
-                , "ilgen/TypeDictionary.hpp"
-                , "ilgen/VirtualMachineOperandArray.hpp"
-                , "ilgen/VirtualMachineOperandStack.hpp"
-                , "ilgen/VirtualMachineRegister.hpp"
-                , "ilgen/VirtualMachineRegisterInStruct.hpp"
-                , "ilgen/VirtualMachineState.hpp"
-                , "client/cpp/Callbacks.hpp"
-                , "client/cpp/Macros.hpp"
-                , "release/cpp/include/BytecodeBuilder.hpp"
-                , "release/cpp/include/IlBuilder.hpp"
-                , "release/cpp/include/IlReference.hpp"
-                , "release/cpp/include/IlType.hpp"
-                , "release/cpp/include/IlValue.hpp"
-                , "release/cpp/include/MethodBuilder.hpp"
-                , "release/cpp/include/ThunkBuilder.hpp"
-                , "release/cpp/include/TypeDictionary.hpp"
-                , "release/cpp/include/VirtualMachineOperandArray.hpp"
-                , "release/cpp/include/VirtualMachineOperandStack.hpp"
-                , "release/cpp/include/VirtualMachineRegister.hpp"
-                , "release/cpp/include/VirtualMachineRegisterInStruct.hpp"
-                , "release/cpp/include/VirtualMachineState.hpp"
-                ]
-    for h in trheaders:
-        writer.write(generate_include(h))
-    writer.write("\n")
-
-    for n in api["namespace"]:
-        target.write("namespace {} {{\n".format(n))
-    writer.write("\n")
-
-    for c in api["classes"]:
-        write_class_impl(writer, c)
-
-    for n in api["namespace"]:
-        target.write("}} // {}\n".format(n))
 
 # main generator #####################################################
 
@@ -372,14 +307,11 @@ def write_class(dest_path, class_desc, namespaces, class_names):
         write_class_source(writer, class_desc, namespaces, class_names)
 
 if __name__ == "__main__":
+    api = {}
     with open("jitbuilder.api.json") as api_src:
         api = json.load(api_src)
-        namespaces = api["namespace"]
-        class_names = [ c["name"] for c in api["classes"] ]
-        for class_desc in api["classes"]:
-            write_class("./client", class_desc, namespaces, class_names)
-        #with open("JitBuilder.hpp", "w") as target:
-        #    write_header(target, api)
-        #with open("JitBuilder.cpp", "w") as target:
-        #    write_source(target, api)
+    namespaces = api["namespace"]
+    class_names = [ c["name"] for c in api["classes"] ]
+    for class_desc in api["classes"]:
+        write_class("./client", class_desc, namespaces, class_names)
 
