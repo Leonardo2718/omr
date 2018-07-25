@@ -89,8 +89,11 @@ def needs_impl(t):
                 , "VirtualMachineState"
                 ]
 
+def get_impl_type(t):
+    return "TR::{} *".format(t) if needs_impl(t) else type_map[t]
+
 def grab_impl(v, t):
-    return "{v} != NULL ? {v}->_impl : NULL".format(v=v) if needs_impl(t) else v
+    return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if needs_impl(t) else v
 
 def generate_parm_list(parms_desc):
     gen_parm = lambda p: "{t} {n}".format(t=type_map[p["type"]],n=p["name"])
@@ -172,11 +175,13 @@ def write_service_impl(writer, desc, class_name):
     args = generate_arg_list(desc["parms"])#", ".join([ grab_impl(a["name"], a["type"]) for a in desc["parms"] ])
     impl_call = "reinterpret_cast<TR::{cname} *>(_impl)->{sname}({args})".format(cname=class_name,sname=name,args=args)
     if "none" == desc["return"]:
-        writer.write(impl_call + ";\n");
-    else:
-        writer.write("TR::{rtype} * implRet = {call};\n".format(rtype=rtype, call=impl_call))
+        writer.write(impl_call + ";\n")
+    elif needs_impl(desc["return"]):
+        writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc["return"]), call=impl_call))
         writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
         writer.write("return clientObj;\n")
+    else:
+        writer.write("return " + impl_call + ";\n")
 
     writer.write("}\n")
 

@@ -109,11 +109,13 @@
                 ],
             "services": [
                 { "name": "CloseStruct"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
                 , "parms": [ {"name":"structName","type":"constString"} ]
                 },
-                { "name": "CloseStructWithSize"
+                { "name": "CloseStruct"
+                , "overloadsuffix": "WithSize"
                 , "flags": []
                 , "return": "none"
                 , "parms": [
@@ -121,11 +123,13 @@
                     {"name":"size","type":"unsignedInteger"} ]
                 },
                 { "name": "CloseUnion"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
                 , "parms": [ {"name":"unionName","type":"constString"} ]
                 },
                 { "name": "DefineField"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
                 , "parms": [
@@ -133,7 +137,8 @@
                     {"name":"fieldName","type":"constString"},
                     {"name":"type","type":"IlType"} ]
                 },
-                { "name": "DefineFieldAtOffset"
+                { "name": "DefineField"
+                , "overloadsuffix": "AtOffset"
                 , "flags": []
                 , "return": "none"
                 , "parms": [
@@ -143,16 +148,19 @@
                     {"name":"offset","type":"unsignedInteger"} ]
                 },
                 { "name": "DefineStruct"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [ {"name":"structName","type":"constString"} ]
                 },
                 { "name": "DefineUnion"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [ {"name":"unionName","type":"constString"} ]
                 },
                 { "name": "GetFieldType"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [
@@ -160,16 +168,19 @@
                     {"name":"fieldName","type":"constString"} ]
                 },
                 { "name": "LookupStruct"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [ {"name":"structName","type":"constString"} ]
                 },
                 { "name": "LookupUnion"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [ {"name":"unionName","type":"constString"} ]
                 },
                 { "name": "OffsetOf"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "unsignedInteger"
                 , "parms": [
@@ -177,16 +188,19 @@
                     {"name":"fieldName","type":"constString"} ]
                 },
                 { "name": "PointerTo"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [ {"name":"baseType","type":"IlType"} ]
                 },
-                { "name": "PointerToStructName"
+                { "name": "PointerTo"
+                , "overloadsuffix": "StructName"
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [ {"name":"structName","type":"constString"} ]
                 },
                 { "name": "UnionField"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
                 , "parms": [
@@ -195,6 +209,7 @@
                     {"name":"fieldType","type":"IlType"} ]
                 },
                 { "name": "UnionFieldType"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "IlType"
                 , "parms": [
