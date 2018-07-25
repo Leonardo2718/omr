@@ -1,8 +1,9 @@
 import sys
+import os
 import json
 import unittest
 
-copyright_header = """
+copyright_header = """\
 /*******************************************************************************
  * Copyright (c) 2018, 2018 IBM Corp. and others
  *
@@ -131,8 +132,6 @@ def write_class_def(writer, class_desc):
     name = class_desc["name"]
     has_extras = "has_extras_header" in class_desc["flags"]
 
-    if has_extras:
-        writer.write(generate_include('ExtrasOutsideClass.hpp'))
     writer.write("class {name} {{\n".format(name=name))
 
     # write fields
@@ -288,11 +287,49 @@ def write_source(writer, api):
 
 # main generator #####################################################
 
+def write_class_header(writer, class_desc, namespaces, class_names):
+    has_extras = "has_extras_header" in class_desc["flags"]
+
+    writer.write(copyright_header)
+    writer.write("\n")
+
+    if has_extras:
+        writer.write(generate_include('ExtrasOutsideClass.hpp'))
+    writer.write("\n")
+
+    # open each nested namespace
+    for n in namespaces:
+        writer.write("namespace {} {{\n".format(n))
+    writer.write("\n")
+
+    writer.write("// forward declarations for all API classes\n")
+    for c in class_names:
+        writer.write("class {};\n".format(c))
+    writer.write("\n")
+
+    write_class_def(writer, class_desc)
+    writer.write("\n")
+
+    # close each openned namespace
+    for n in reversed(namespaces):
+        writer.write("}} // {}\n".format(n))
+
+def write_class(dest_path, class_desc, namespaces, class_names):
+    cname = class_desc["name"]
+    header_path = os.path.join(dest_path, cname + ".hpp")
+    source_path = os.path.join(dest_path, cname + ".cpp")
+    with open(header_path, "w") as writer:
+        write_class_header(writer, class_desc, namespaces, class_names)
+
 if __name__ == "__main__":
     with open("jitbuilder.api.json") as api_src:
         api = json.load(api_src)
-        with open("JitBuilder.hpp", "w") as target:
-            write_header(target, api)
-        with open("JitBuilder.cpp", "w") as target:
-            write_source(target, api)
+        namespaces = api["namespace"]
+        class_names = [ c["name"] for c in api["classes"] ]
+        for class_desc in api["classes"]:
+            write_class("./client", class_desc, namespaces, class_names)
+        #with open("JitBuilder.hpp", "w") as target:
+        #    write_header(target, api)
+        #with open("JitBuilder.cpp", "w") as target:
+        #    write_source(target, api)
 
