@@ -314,12 +314,62 @@ def write_class_header(writer, class_desc, namespaces, class_names):
     for n in reversed(namespaces):
         writer.write("}} // {}\n".format(n))
 
+def write_class_source(writer, class_desc, namespaces, class_names):
+    writer.write(copyright_header)
+    writer.write("\n")
+
+    # don't bother checking what headers are needed, include everything
+    trheaders = [ "ilgen/BytecodeBuilder.hpp"
+                , "ilgen/IlBuilder.hpp"
+                , "ilgen/IlType.hpp"
+                , "ilgen/IlValue.hpp"
+                , "ilgen/MethodBuilder.hpp"
+                , "ilgen/ThunkBuilder.hpp"
+                , "ilgen/TypeDictionary.hpp"
+                , "ilgen/VirtualMachineOperandArray.hpp"
+                , "ilgen/VirtualMachineOperandStack.hpp"
+                , "ilgen/VirtualMachineRegister.hpp"
+                , "ilgen/VirtualMachineRegisterInStruct.hpp"
+                , "ilgen/VirtualMachineState.hpp"
+                , "client/cpp/Callbacks.hpp"
+                , "client/cpp/Macros.hpp"
+                , "release/cpp/include/BytecodeBuilder.hpp"
+                , "release/cpp/include/IlBuilder.hpp"
+                , "release/cpp/include/IlReference.hpp"
+                , "release/cpp/include/IlType.hpp"
+                , "release/cpp/include/IlValue.hpp"
+                , "release/cpp/include/MethodBuilder.hpp"
+                , "release/cpp/include/ThunkBuilder.hpp"
+                , "release/cpp/include/TypeDictionary.hpp"
+                , "release/cpp/include/VirtualMachineOperandArray.hpp"
+                , "release/cpp/include/VirtualMachineOperandStack.hpp"
+                , "release/cpp/include/VirtualMachineRegister.hpp"
+                , "release/cpp/include/VirtualMachineRegisterInStruct.hpp"
+                , "release/cpp/include/VirtualMachineState.hpp"
+                ]
+    for h in trheaders:
+        writer.write(generate_include(h))
+    writer.write("\n")
+
+    # open each nested namespace
+    for n in namespaces:
+        writer.write("namespace {} {{\n".format(n))
+    writer.write("\n")
+
+    write_class_impl(writer, class_desc)
+
+    # close each openned namespace
+    for n in reversed(namespaces):
+        writer.write("}} // {}\n".format(n))
+
 def write_class(dest_path, class_desc, namespaces, class_names):
     cname = class_desc["name"]
     header_path = os.path.join(dest_path, cname + ".hpp")
     source_path = os.path.join(dest_path, cname + ".cpp")
     with open(header_path, "w") as writer:
         write_class_header(writer, class_desc, namespaces, class_names)
+    with open(source_path, "w") as writer:
+        write_class_source(writer, class_desc, namespaces, class_names)
 
 if __name__ == "__main__":
     with open("jitbuilder.api.json") as api_src:
