@@ -105,7 +105,7 @@ def write_field(writer, field, with_visibility = True):
     t = type_map[field["type"]]
     n = field["name"]
     v = "public" if with_visibility else ""
-    writer.write("{visibility}: {type} {name}; ".format(visibility=v, type=t, name=n))
+    writer.write("{visibility}: {type} {name};".format(visibility=v, type=t, name=n))
 
 def write_service(writer, service, with_visibility = True):
     """Generate a service from tis description"""
@@ -120,6 +120,9 @@ def write_ctor_decl(writer, ctor_desc, class_name):
     v = "protected" if "protected" in ctor_desc["flags"] else "public"
     parms = generate_parm_list(ctor_desc["parms"])
     writer.write("{visibility}: {name}({parms});\n".format(visibility=v, name=class_name, parms=parms))
+
+    parms = "void * impl" + "" if parms == "" else ", " + parms
+    writer.write("protected: {name}({parms});\n".format(name=class_name, parms=parms))
 
 def write_class(writer, class_desc):
     name = class_desc["name"]
