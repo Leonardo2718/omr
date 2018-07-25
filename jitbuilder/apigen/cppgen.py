@@ -123,7 +123,7 @@ def generate_ctor_decl(ctor_desc, class_name):
     decls = "{visibility}{name}({parms});\n".format(visibility=v, name=class_name, parms=parms)
 
     parms = "void * impl" + "" if parms == "" else ", " + parms
-    return decls + "protected: {name}({parms});\n".format(name=class_name, parms=parms)
+    return decls + "public: {name}({parms});\n".format(name=class_name, parms=parms)
 
 def generate_dtor_decl(class_desc):
     return "public: ~{cname}();\n".format(cname=class_desc["name"])
@@ -140,7 +140,7 @@ def write_class_def(writer, class_desc):
         writer.write(decl)
 
     # write needed impl field
-    writer.write("public: void* _impl\n")
+    writer.write("public: void* _impl;\n")
 
     for ctor in class_desc["constructors"]:
         decls = generate_ctor_decl(ctor, name)
@@ -157,7 +157,7 @@ def write_class_def(writer, class_desc):
         writer.write(decl)
 
     if has_extras:
-        writer.write(generate_include('ExtrasInsideClass.hpp'))
+        writer.write(generate_include('{}ExtrasInsideClass.hpp'.format(class_desc["name"])))
 
     writer.write('};\n')
 
@@ -174,7 +174,7 @@ def write_service_impl(writer, desc, class_name):
     if "none" == desc["return"]:
         writer.write(impl_call + ";\n");
     else:
-        writer.write("{rtype} implRet = {call};\n".format(rtype=rtype, call=impl_call))
+        writer.write("TR::{rtype} * implRet = {call};\n".format(rtype=rtype, call=impl_call))
         writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
         writer.write("return clientObj;\n")
 
@@ -189,15 +189,15 @@ def write_class_impl(writer, class_desc):
         writer.write("{cname}::{cname}({parms}) {{\n".format(cname=cname, parms=parms))
         args = generate_arg_list(ctor["parms"])
         writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
-        writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n");
+        writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n".format(cname=cname));
         writer.write("initializeFromImpl(_impl);\n")
         writer.write("}\n\n")
 
         parms = "void * impl" + "" if parms == "" else "," + parms
         writer.write("{cname}::{cname}({parms}) {{\n".format(cname=cname, parms=parms))
         args = "impl" + "" if args == "" else "," + args
-        writer.write("if (imple != NULL) {\n")
-        writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n");
+        writer.write("if (impl != NULL) {\n")
+        writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n".format(cname=cname));
         writer.write("initializeFromImpl(impl);\n")
         writer.write("}\n")
         writer.write("}\n")
@@ -229,7 +229,7 @@ def write_class_header(writer, class_desc, namespaces, class_names):
     writer.write("\n")
 
     if has_extras:
-        writer.write(generate_include('ExtrasOutsideClass.hpp'))
+        writer.write(generate_include('{}ExtrasOutsideClass.hpp'.format(class_desc["name"])))
     writer.write("\n")
 
     # open each nested namespace

@@ -108,11 +108,6 @@
                 }
                 ],
             "services": [
-                { "name": "Destroy"
-                , "flags": []
-                , "return": "none"
-                , "parms": []
-                },
                 { "name": "CloseStruct"
                 , "flags": []
                 , "return": "none"
