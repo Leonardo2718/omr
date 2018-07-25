@@ -100,31 +100,34 @@ def generate_arg_list(parms_desc):
 
 # header utilities ###################################################
 
-def write_field(writer, field, with_visibility = True):
+def generate_field_decl(field, with_visibility = True):
     """Generate a field from its description"""
     t = type_map[field["type"]]
     n = field["name"]
-    v = "public" if with_visibility else ""
-    writer.write("{visibility}: {type} {name};".format(visibility=v, type=t, name=n))
+    v = "public: " if with_visibility else ""
+    return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
 
-def write_service(writer, service, with_visibility = True):
+def generate_service_decl(service, with_visibility = True):
     """Generate a service from tis description"""
-    vis = "" if not with_visibility else "protected" if "protected" in service["flags"] else "public"
+    vis = "" if not with_visibility else "protected: " if "protected" in service["flags"] else "public: "
     static = "static" if "static" in service["flags"] else ""
     ret = type_map[service["return"]]
     name = service["name"]
     parms = generate_parm_list(service["parms"])
-    writer.write("{visibility}: {qualifier} {rtype} {name}({parms});".format(visibility=vis, qualifier=static, rtype=ret, name=name, parms=parms))
+    return "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis, qualifier=static, rtype=ret, name=name, parms=parms)
 
-def write_ctor_decl(writer, ctor_desc, class_name):
-    v = "protected" if "protected" in ctor_desc["flags"] else "public"
+def generate_ctor_decl(ctor_desc, class_name):
+    v = "protected: " if "protected" in ctor_desc["flags"] else "public: "
     parms = generate_parm_list(ctor_desc["parms"])
-    writer.write("{visibility}: {name}({parms});\n".format(visibility=v, name=class_name, parms=parms))
+    decls = "{visibility}{name}({parms});\n".format(visibility=v, name=class_name, parms=parms)
 
     parms = "void * impl" + "" if parms == "" else ", " + parms
-    writer.write("protected: {name}({parms});\n".format(name=class_name, parms=parms))
+    return decls + "protected: {name}({parms});\n".format(name=class_name, parms=parms)
 
-def write_class(writer, class_desc):
+def generate_dtor_decl(class_desc):
+    return "public: ~{cname}();\n".format(cname=class_desc["name"])
+
+def write_class_def(writer, class_desc):
     name = class_desc["name"]
     has_extras = "has_extras_header" in class_desc["flags"]
 
@@ -134,24 +137,25 @@ def write_class(writer, class_desc):
 
     # write fields
     for field in class_desc["fields"]:
-        write_field(writer, field)
-        writer.write("\n")
+        decl = generate_field_decl(field)
+        writer.write(decl)
 
     # write needed impl field
     writer.write("public: void* _impl\n")
 
     for ctor in class_desc["constructors"]:
-        write_ctor_decl(writer, ctor, name)
+        decls = generate_ctor_decl(ctor, name)
+        writer.write(decls)
 
     # write impl init service delcaration
     writer.write("protected: void initializeFromImpl(void * impl);\n")
 
-    # write destructor declaration
-    writer.write("public: ~{name}();\n".format(name=name))
+    dtor_decl = generate_dtor_decl(class_desc)
+    writer.write(dtor_decl)
 
     for service in class_desc["services"]:
-        write_service(writer, service)
-        writer.write("\n")
+        decl = generate_service_decl(service)
+        writer.write(decl)
 
     if has_extras:
         writer.write(generate_include('ExtrasInsideClass.hpp'))
@@ -171,7 +175,7 @@ def write_header(writer, api):
 
     # write classes
     for c in api["classes"]:
-        write_class(target, c)
+        write_class_def(target, c)
 
     for n in api["namespace"]:
         target.write("}} // {}\n".format(n))
