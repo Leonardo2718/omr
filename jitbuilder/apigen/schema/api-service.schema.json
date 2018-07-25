@@ -9,6 +9,7 @@
     "properties": {
         "doc": { "description": "inline documentation for the service", "type": "string" },
         "name": { "description": "the name of the service", "type": "string" },
+        "overloadsuffix": { "description": "suffix to add to based name when overloading is not supported", "type": "string" },
         "return": { "description": "return type of the service", "$ref": "api-type.schema.json" },
         "parms": {
             "description": "description of parameters of the service",
@@ -28,5 +29,5 @@
             "items": { "enum": [ "protected", "public", "static", "virtual", "callback", "create_impl", "is_overidden" ] }
         }
     },
-    "required": [ "name", "return", "parms", "flags" ]
+    "required": [ "name", "overloadsuffix", "return", "parms", "flags" ]
 }
