@@ -10,53 +10,8 @@
     "services": [],
     "classes": [
         {
-            "name": "IlType",
-            "short-name": "IT",
-            "flags": [],
-            "types": [],
-            "fields": [],
-            "constructors": [],
-            "services": []
-        },
-        {
-            "name": "IlValue",
-            "short-name": "IV",
-            "flags": [],
-            "types": [],
-            "fields": [],
-            "constructors": [],
-            "services": []
-        },
-        {
             "name": "IlBuilder",
             "short-name": "IB",
-            "flags": [],
-            "types": [],
-            "fields": [],
-            "constructors": [],
-            "services": []
-        },
-        {
-            "name": "MethodBuilder",
-            "short-name": "MB",
-            "flags": [],
-            "types": [],
-            "fields": [],
-            "constructors": [],
-            "services": []
-        },
-        {
-            "name": "BytecodeBuilder",
-            "short-name": "BB",
-            "flags": [],
-            "types": [],
-            "fields": [],
-            "constructors": [],
-            "services": []
-        },
-        {
-            "name": "ThunkBuilder",
-            "short-name": "TB",
             "flags": [],
             "types": [],
             "fields": [],
