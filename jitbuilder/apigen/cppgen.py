@@ -96,8 +96,11 @@ def get_impl_type(t, attrs = None):
 def grab_impl(v, t):
     return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if needs_impl(t) else v
 
+def is_in_out(parm_desc):
+    return "attributes" in parm_desc and "in_out" in parm_desc["attributes"]
+
 def generate_parm(parm_desc):
-    fmt = "{t}* {n}" if "attributes" in parm_desc and "in_out" in parm_desc["attributes"] else "{t} {n}"
+    fmt = "{t}* {n}" if is_in_out(parm_desc) else "{t} {n}"
     return fmt.format(t=type_map[parm_desc["type"]],n=parm_desc["name"])
 
 def generate_parm_list(parms_desc):
@@ -106,7 +109,7 @@ def generate_parm_list(parms_desc):
 def generate_arg(parm_desc):
     n = parm_desc["name"]
     t = parm_desc["type"]
-    return (n + "Arg") if "attributes" in parm_desc and "in_out" in parm_desc["attributes"] else grab_impl(n,t)
+    return (n + "Arg") if is_in_out(parm_desc) else grab_impl(n,t)
 
 def generate_arg_list(parms_desc):
     return ", ".join([ generate_arg(a) for a in parms_desc ])
@@ -175,22 +178,40 @@ def write_class_def(writer, class_desc):
 
 # source utilities ###################################################
 
+def write_setup_arg(writer, parm):
+    if is_in_out(parm):
+        writer.write("SETUP_ARG({t}, {n}Impl, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"]))
+
+def write_arg_return(writer, parm):
+    if is_in_out(parm):
+        writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=parm["type"], n=parm["name"]))
+
 def write_service_impl(writer, desc, class_name):
     rtype = type_map[desc["return"]]
     name = desc["name"]
     parms = generate_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
 
-    args = generate_arg_list(desc["parms"])#", ".join([ grab_impl(a["name"], a["type"]) for a in desc["parms"] ])
+    for parm in desc["parms"]:
+        write_setup_arg(writer, parm)
+
+    args = generate_arg_list(desc["parms"])
     impl_call = "reinterpret_cast<TR::{cname} *>(_impl)->{sname}({args})".format(cname=class_name,sname=name,args=args)
     if "none" == desc["return"]:
         writer.write(impl_call + ";\n")
+        for parm in desc["parms"]:
+            write_arg_return(writer, parm)
     elif needs_impl(desc["return"]):
         writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc["return"]), call=impl_call))
+        for parm in desc["parms"]:
+            write_arg_return(writer, parm)
         writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
         writer.write("return clientObj;\n")
     else:
-        writer.write("return " + impl_call + ";\n")
+        writer.write("auto reg = " + impl_call + ";\n")
+        for parm in desc["parms"]:
+            write_arg_return(writer, parm)
+        writer.write("return ret;\n")
 
     writer.write("}\n")
 
