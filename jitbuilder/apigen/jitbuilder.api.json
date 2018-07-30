@@ -142,7 +142,7 @@
                 , "flags": []
                 , "return": "IlValue"
                 , "parms": [
-                    {"name":"overflowHandler","type":"IlBuilderByRef"},
+                    {"name":"overflowHandler","type":"IlBuilder","attributes":"in_out"},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -152,7 +152,7 @@
                 , "flags": []
                 , "return": "IlValue"
                 , "parms": [
-                    {"name":"overflowHandler","type":"IlBuilderByRef"},
+                    {"name":"overflowHandler","type":"IlBuilder","attributes":"in_out"},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -199,7 +199,7 @@
                 , "flags": []
                 , "return": "IlValue"
                 , "parms": [
-                    {"name":"overflowHandler","type":"IlBuilderByRef"},
+                    {"name":"overflowHandler","type":"IlBuilder","attributes":"in_out"},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -254,7 +254,7 @@
                 , "flags": []
                 , "return": "IlValue"
                 , "parms": [
-                    {"name":"overflowHandler","type":"IlBuilderByRef"},
+                    {"name":"overflowHandler","type":"IlBuilder","attributes":"in_out"},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -264,7 +264,7 @@
                 , "flags": []
                 , "return": "IlValue"
                 , "parms": [
-                    {"name":"overflowHandler","type":"IlBuilderByRef"},
+                    {"name":"overflowHandler","type":"IlBuilder","attributes":"in_out"},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -487,9 +487,9 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"persistentFailureBuilder","type":"IlBuilderByRef"},
-                    {"name":"transientFailureBuilder","type":"IlBuilderByRef"},
-                    {"name":"transactionBuilder","type":"IlBuilderByRef"}
+                    {"name":"persistentFailureBuilder","type":"IlBuilder","attributes":"in_out"},
+                    {"name":"transientFailureBuilder","type":"IlBuilder","attributes":"in_out"},
+                    {"name":"transactionBuilder","type":"IlBuilder","attributes":"in_out"}
                     ]
                 },
                 { "name": "TransactionAbort"
@@ -583,7 +583,7 @@
                 , "return": "none"
                 , "parms": [
                     {"name":"exitCondition","type":"string"},
-                    {"name":"body","type":"IlBuilderByRef"}
+                    {"name":"body","type":"IlBuilder","attributes":"in_out"}
                     ]
                 }
                 ]
