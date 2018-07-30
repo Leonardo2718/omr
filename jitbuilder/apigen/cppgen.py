@@ -99,8 +99,11 @@ def grab_impl(v, t):
 def is_in_out(parm_desc):
     return "attributes" in parm_desc and "in_out" in parm_desc["attributes"]
 
+def is_array(parm_desc):
+    return "attributes" in parm_desc and "array" in parm_desc["attributes"]
+
 def generate_parm(parm_desc):
-    fmt = "{t}* {n}" if is_in_out(parm_desc) else "{t} {n}"
+    fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
     return fmt.format(t=type_map[parm_desc["type"]],n=parm_desc["name"])
 
 def generate_parm_list(parms_desc):
@@ -109,7 +112,7 @@ def generate_parm_list(parms_desc):
 def generate_arg(parm_desc):
     n = parm_desc["name"]
     t = parm_desc["type"]
-    return (n + "Arg") if is_in_out(parm_desc) else grab_impl(n,t)
+    return (n + "Arg") if is_in_out(parm_desc) or is_array(parm_desc) else grab_impl(n,t)
 
 def generate_arg_list(parms_desc):
     return ", ".join([ generate_arg(a) for a in parms_desc ])
@@ -178,13 +181,17 @@ def write_class_def(writer, class_desc):
 
 # source utilities ###################################################
 
-def write_setup_arg(writer, parm):
+def write_arg_setup(writer, parm):
     if is_in_out(parm):
-        writer.write("SETUP_ARG({t}, {n}Impl, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"]))
+        writer.write("ARG_SETUP({t}, {n}Impl, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"]))
+    elif is_array(parm):
+        writer.write("ARRAY_ARG_SETUP({t}, {s}, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"], s=parm["array-len"]))
 
 def write_arg_return(writer, parm):
     if is_in_out(parm):
         writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=parm["type"], n=parm["name"]))
+    elif is_array(parm):
+        writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"], s=parm["array-len"]))
 
 def write_service_impl(writer, desc, class_name):
     rtype = type_map[desc["return"]]
@@ -193,7 +200,7 @@ def write_service_impl(writer, desc, class_name):
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
 
     for parm in desc["parms"]:
-        write_setup_arg(writer, parm)
+        write_arg_setup(writer, parm)
 
     args = generate_arg_list(desc["parms"])
     impl_call = "reinterpret_cast<TR::{cname} *>(_impl)->{sname}({args})".format(cname=class_name,sname=name,args=args)
