@@ -18,7 +18,8 @@
                 "type": "object",
                 "properties": {
                     "name": { "type": "string" },
-                    "type": { "$ref": "api-type.schema.json" }
+                    "type": { "$ref": "api-type.schema.json" },
+                    "attributes": { "enum": [ "in_out", "can_be_vararg" ] }
                 },
                 "required": [ "name", "type" ]
             }
