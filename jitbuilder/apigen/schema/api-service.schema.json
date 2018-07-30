@@ -19,7 +19,10 @@
                 "properties": {
                     "name": { "type": "string" },
                     "type": { "$ref": "api-type.schema.json" },
-                    "attributes": { "enum": [ "in_out", "array", "can_be_vararg" ] },
+                    "attributes": { 
+                        "type":"array",
+                        "items": { "enum": [ "in_out", "array", "can_be_vararg" ] }
+                    },
                     "array-len": { "type": "string" }
                 },
                 "required": [ "name", "type" ]
