@@ -48,12 +48,12 @@ type_map = { "none": "void"
            #, "vararg": "..."
            , "BytecodeBuilder": "BytecodeBuilder *"
            , "BytecodeBuilderArray": "BytecodeBuilder **"
-           , "BytecodeBuilderByRef": "BytecodeBuilder **"
+           #, "BytecodeBuilderByRef": "BytecodeBuilder **"
            , "BytecodeBuilderImpl": "TR::BytecodeBuilder *"
            , "ppBytecodeBuilder": "BytecodeBuilder **"
            , "IlBuilder": "BytecodeBuilder *"
            , "IlBuilderArray": "IlBuilder **"
-           , "IlBuilderByRef": "IlBuilder **"
+           #, "IlBuilderByRef": "IlBuilder **"
            , "IlBuilderImpl": "TR::IlBuilder *"
            , "ppIlBuilder": "IlBuilder **"
            , "MethodBuilder": "MethodBuilder *"
@@ -89,18 +89,27 @@ def needs_impl(t):
                 , "VirtualMachineState"
                 ]
 
-def get_impl_type(t):
+
+def get_impl_type(t, attrs = None):
     return "TR::{} *".format(t) if needs_impl(t) else type_map[t]
 
 def grab_impl(v, t):
     return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if needs_impl(t) else v
 
+def generate_parm(parm_desc):
+    fmt = "{t}* {n}" if "attributes" in parm_desc and "in_out" in parm_desc["attributes"] else "{t} {n}"
+    return fmt.format(t=type_map[parm_desc["type"]],n=parm_desc["name"])
+
 def generate_parm_list(parms_desc):
-    gen_parm = lambda p: "{t} {n}".format(t=type_map[p["type"]],n=p["name"])
-    return ", ".join([ gen_parm(p) for p in parms_desc ])
+    return ", ".join([ generate_parm(p) for p in parms_desc ])
+
+def generate_arg(parm_desc):
+    n = parm_desc["name"]
+    t = parm_desc["type"]
+    return (n + "Arg") if "attributes" in parm_desc and "in_out" in parm_desc["attributes"] else grab_impl(n,t)
 
 def generate_arg_list(parms_desc):
-    return ", ".join([ grab_impl(a["name"], a["type"]) for a in parms_desc ])
+    return ", ".join([ generate_arg(a) for a in parms_desc ])
 
 # header utilities ###################################################
 
