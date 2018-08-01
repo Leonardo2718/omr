@@ -51,13 +51,14 @@ type_map = { "none": "void"
            #, "BytecodeBuilderByRef": "BytecodeBuilder **"
            , "BytecodeBuilderImpl": "TR::BytecodeBuilder *"
            , "ppBytecodeBuilder": "BytecodeBuilder **"
-           , "IlBuilder": "BytecodeBuilder *"
+           , "IlBuilder": "IlBuilder *"
            , "IlBuilderArray": "IlBuilder **"
            #, "IlBuilderByRef": "IlBuilder **"
            , "IlBuilderImpl": "TR::IlBuilder *"
            , "ppIlBuilder": "IlBuilder **"
            , "MethodBuilder": "MethodBuilder *"
            , "MethodBuilderImpl": "TR::MethodBuilder *"
+           , "JBCase": "IlBuilder::JBCase *"
            , "IlReference": "IlReference *"
            , "IlType": "IlType *"
            , "IlTypeArray": "IlType **"
@@ -91,7 +92,7 @@ def needs_impl(t):
 
 
 def get_impl_type(t, attrs = None):
-    return "TR::{} *".format(t) if needs_impl(t) else type_map[t]
+    return "TR::{}".format(type_map[t]) if needs_impl(t) else type_map[t]
 
 def grab_impl(v, t):
     return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if needs_impl(t) else v
@@ -140,7 +141,7 @@ def generate_ctor_decl(ctor_desc, class_name):
     parms = generate_parm_list(ctor_desc["parms"])
     decls = "{visibility}{name}({parms});\n".format(visibility=v, name=class_name, parms=parms)
 
-    parms = "void * impl" + "" if parms == "" else ", " + parms
+    parms = "void * impl" + ("" if parms == "" else ", " + parms)
     return decls + "public: {name}({parms});\n".format(name=class_name, parms=parms)
 
 def generate_dtor_decl(class_desc):
@@ -151,6 +152,10 @@ def write_class_def(writer, class_desc):
     has_extras = "has_extras_header" in class_desc["flags"]
 
     writer.write("class {name} {{\n".format(name=name))
+
+    # write nested classes
+    for c in class_desc["types"]:
+        write_class_def(writer, c)
 
     # write fields
     for field in class_desc["fields"]:
@@ -222,21 +227,25 @@ def write_service_impl(writer, desc, class_name):
 
     writer.write("}\n")
 
-def write_class_impl(writer, class_desc):
-    cname = class_desc["name"]
+def write_class_impl(writer, class_desc, prefix=""):
+    cname = prefix + class_desc["name"]
+
+    # write source for iner classes first
+    for c in class_desc["types"]:
+        write_class_impl(writer, c, cname + "::" )
 
     # write constructor definitions
     for ctor in class_desc["constructors"]:
         parms = generate_parm_list(ctor["parms"])
-        writer.write("{cname}::{cname}({parms}) {{\n".format(cname=cname, parms=parms))
+        writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
         args = generate_arg_list(ctor["parms"])
         writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
         writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n".format(cname=cname));
         writer.write("initializeFromImpl(_impl);\n")
         writer.write("}\n\n")
 
-        parms = "void * impl" + "" if parms == "" else "," + parms
-        writer.write("{cname}::{cname}({parms}) {{\n".format(cname=cname, parms=parms))
+        parms = "void * impl" + ("" if parms == "" else "," + parms)
+        writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
         args = "impl" + "" if args == "" else "," + args
         writer.write("if (impl != NULL) {\n")
         writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n".format(cname=cname));
