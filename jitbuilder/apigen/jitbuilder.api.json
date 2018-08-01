@@ -14,7 +14,27 @@
             "short-name": "IB",
             "flags": [
                 ],
-            "types": [],
+            "types": [
+                { "name": "JBCase",
+                  "short-name": "JBCase",
+                  "flags": [],
+                  "types": [],
+                  "fields": [],
+                  "constructors": [
+                      { "name": ""
+                      , "overloadsuffix": ""
+                      , "flags": []
+                      , "return": "none"
+                      , "parms": [
+                          {"name":"caseValue","type":"int32"},
+                          {"name":"caseBuilder","type":"IlBuilder","attributes":["in_out"]},
+                          {"name":"caseFallsThrough","type":"int32"}
+                          ]
+                      }
+                      ],
+                  "services": []
+                }
+                ],
             "fields": [
                 { "name": "NoType", "type": "IlType", "assign_at_init": true },
                 { "name": "Int8", "type": "IlType", "assign_at_init": true },
@@ -584,6 +604,27 @@
                 , "parms": [
                     {"name":"exitCondition","type":"string"},
                     {"name":"body","type":"IlBuilder","attributes":["in_out"]}
+                    ]
+                },
+                { "name": "Switch"
+                , "overloadsuffix": "WithArgArray"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"selectionVar","type":"constString"},
+                    {"name":"defaultBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"numCases","type":"int32"},
+                    {"name":"cases","type":"JBCase","attributes":["array","can_be_vararg"],"array-len":"numCases"}
+                    ]
+                },
+                { "name": "MakeCase"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "JBCase"
+                , "parms": [
+                    {"name":"value","type":"int32"},
+                    {"name":"builder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"fallsThrough","type":"int32"}
                     ]
                 }
                 ]
