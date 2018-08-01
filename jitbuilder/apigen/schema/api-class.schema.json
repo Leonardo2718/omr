@@ -17,7 +17,7 @@
         "types": {
             "description": "Definition of datatypes used by the API",
             "type": "array",
-            "items": { "$ref": "api-type.schema.json" }
+            "items": { "$ref": "api-class.schema.json" }
         },
         "fields": {
             "description": "Definition of data fields offered by the API",
