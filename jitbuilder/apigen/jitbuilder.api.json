@@ -606,6 +606,383 @@
                     {"name":"body","type":"IlBuilder","attributes":["in_out"]}
                     ]
                 },
+                { "name": "DoWhileLoop"
+                , "overloadsuffix": "WithBreakAndContinue"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"exitCondition","type":"string"},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attributes":["in_out"]}
+                    ]
+                },
+                { "name": "DoWhileLoop"
+                , "overloadsuffix": "WithBreak"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"exitCondition","type":"string"},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]}
+                    ]
+                },
+                { "name": "DoWhileLoop"
+                , "overloadsuffix": "WithContinue"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"exitCondition","type":"string"},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attributes":["in_out"]}
+                    ]
+                },
+                { "name": "Goto"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "Goto"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder","attributes":["in_out"]} ]
+                },
+                { "name": "IfCmpEqual"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpEqual"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpLessOrEqual"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpLessOrEqual"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpLessThan"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpLessThan"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpGreaterOrEqual"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpGreaterOrEqual"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpGreaterThan"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpGreaterThan"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpNotEqual"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpNotEqual"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedLessOrEqual"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedLessOrEqual"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedLessThan"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedLessThan"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedGreaterOrEqual"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedGreaterOrEqual"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedGreaterThan"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpUnsignedGreaterThan"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"left","type":"IlValue"},
+                    {"name":"right","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpEqualZero"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpEqualZero"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpNotEqualZero"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder"},
+                    {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfCmpNotEqualZero"
+                , "overloadsuffix": "New"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfThen"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"thenPath","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfThenElse"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"thenPath","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"elsePath","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "ForLoop"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"countsUp","type":"boolean"},
+                    {"name":"indVar","type":"string"},
+                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"initial","type":"IlValue"},
+                    {"name":"iterateWhile","type":"IlValue"},
+                    {"name":"increment","type":"IlValue"}
+                    ]
+                },
+                { "name": "ForLoopDown"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"indVar","type":"string"},
+                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"initial","type":"IlValue"},
+                    {"name":"iterateWhile","type":"IlValue"},
+                    {"name":"increment","type":"IlValue"}
+                    ]
+                },
+                { "name": "ForLoopUp"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"indVar","type":"string"},
+                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"initial","type":"IlValue"},
+                    {"name":"iterateWhile","type":"IlValue"},
+                    {"name":"increment","type":"IlValue"}
+                    ]
+                },
+                { "name": "ForLoopWithBreak"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"countsUp","type":"boolean"},
+                    {"name":"indVar","type":"string"},
+                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"initial","type":"IlValue"},
+                    {"name":"iterateWhile","type":"IlValue"},
+                    {"name":"increment","type":"IlValue"}
+                    ]
+                },
+                { "name": "ForLoopWithContinue"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"countsUp","type":"boolean"},
+                    {"name":"indVar","type":"string"},
+                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"initial","type":"IlValue"},
+                    {"name":"iterateWhile","type":"IlValue"},
+                    {"name":"increment","type":"IlValue"}
+                    ]
+                },
+                { "name": "Return"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": []
+                },
+                { "name": "Return"
+                , "overloadsuffix": "Value"
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"value","type":"IlValue"} ]
+                },
                 { "name": "Switch"
                 , "overloadsuffix": "WithArgArray"
                 , "flags": []
@@ -625,6 +1002,35 @@
                     {"name":"value","type":"int32"},
                     {"name":"builder","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"fallsThrough","type":"int32"}
+                    ]
+                },
+                { "name": "WileDoLoop"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"exitCondition","type":"string"},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]}
+                    ]
+                },
+                { "name": "WileDoLoopWithBreak"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"exitCondition","type":"string"},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]}
+                    ]
+                },
+                { "name": "WileDoLoopWithContinue"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"exitCondition","type":"string"},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attributes":["in_out"]}
                     ]
                 }
                 ]
