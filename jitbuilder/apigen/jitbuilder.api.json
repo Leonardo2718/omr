@@ -649,6 +649,17 @@
                 , "return": "none"
                 , "parms": [ {"name":"b","type":"IlBuilder","attributes":["in_out"]} ]
                 },
+                { "name": "IfAnd"
+                , "overloadsuffix": "WithArgArray"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"allTrueBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"anyFalseBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"numTerms","type":"int32"},
+                    {"name":"terms","type":"JBCondition","attributes":["array","can_be_vararg"],"array-len":"numTerms"}
+                    ]
+                },
                 { "name": "IfCmpEqual"
                 , "overloadsuffix": ""
                 , "flags": []
@@ -883,6 +894,17 @@
                 , "parms": [
                     {"name":"target","type":"IlBuilder","attribute":["in_out"]},
                     {"name":"condition","type":"IlValue"}
+                    ]
+                },
+                { "name": "IfOr"
+                , "overloadsuffix": "WithArgArray"
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"anyTrueBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"allFalseBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"numTerms","type":"int32"},
+                    {"name":"terms","type":"JBCondition","attributes":["array","can_be_vararg"],"array-len":"numTerms"}
                     ]
                 },
                 { "name": "IfThen"
