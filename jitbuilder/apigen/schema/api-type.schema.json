@@ -37,6 +37,7 @@
         "MethodBuilderArray",
         "MethodBuilderImpl",
         "JBCase",
+        "JBCondition",
         "IlReference",
         "IlType",
         "IlTypeArray",
