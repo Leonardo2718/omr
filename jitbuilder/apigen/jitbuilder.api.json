@@ -32,7 +32,8 @@
                           ]
                       }
                       ],
-                  "services": []
+                  "services": [],
+                  "callbacks": []
                 }
                 ],
             "fields": [
@@ -57,6 +58,14 @@
                 , "overloadsuffix": ""
                 , "flags": [ "protected", "create_impl" ]
                 , "return": "none"
+                , "parms": []
+                }
+                ],
+            "callbacks": [
+                { "name": "buildIL"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "boolean"
                 , "parms": []
                 }
                 ],
@@ -1101,6 +1110,8 @@
                 , "return": "none"
                 , "parms": []
                 }
+                ],
+            "callbacks": [
                 ],
             "services": [
                 { "name": "CloseStruct"
