@@ -33,7 +33,12 @@
             "description": "Definition of services (functions, methods, etc.) offered by the API",
             "type": "array",
             "items": { "$ref": "api-service.schema.json" }
+        },
+        "callbacks": {
+            "description": "Definition of callbacks expected by the API",
+            "type": "array",
+            "items": { "$ref": "api-service.schema.json" }
         }
     },
-    "required": [ "name", "types", "fields", "constructors", "services", "flags" ]
+    "required": [ "name", "types", "fields", "constructors", "services", "callbacks", "flags" ]
 }
