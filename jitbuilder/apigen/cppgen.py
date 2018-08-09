@@ -84,13 +84,14 @@ def generate_include(path):
 def needs_impl(t):
     return t in [ "BytecodeBuilder"
                 , "IlBuilder"
+                , "JBCase"
+                , "JBCondition"
                 , "MethodBuilder"
                 , "IlType"
                 , "IlValue"
                 , "TypeDictionary"
                 , "VirtualMachineState"
                 ]
-
 
 def get_impl_type(t, attrs = None):
     return "TR::{}".format(type_map[t]) if needs_impl(t) else type_map[t]
@@ -119,6 +120,15 @@ def generate_arg(parm_desc):
 def generate_arg_list(parms_desc):
     return ", ".join([ generate_arg(a) for a in parms_desc ])
 
+def callback_registrar_name(callback_desc):
+    return "setClientCallback_" + callback_desc["name"]
+
+def callback_thunk_name(class_desc, callback_desc):
+    return "{cname}Callback_{callback}".format(cname=class_desc["name"], callback=callback_desc["name"])
+
+def list_str_prepend(pre, list_str):
+    return pre + ("" if list_str == "" else ", " + list_str)
+
 # header utilities ###################################################
 
 def generate_field_decl(field, with_visibility = True):
@@ -128,22 +138,23 @@ def generate_field_decl(field, with_visibility = True):
     v = "public: " if with_visibility else ""
     return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
 
-def generate_service_decl(service, with_visibility = True):
+def generate_service_decl(service, with_visibility = True, is_callback=False):
     """Generate a service from tis description"""
     vis = "" if not with_visibility else "protected: " if "protected" in service["flags"] else "public: "
     static = "static" if "static" in service["flags"] else ""
+    qual = ("virtual" if is_callback else " ") + static
     ret = type_map[service["return"]]
     name = service["name"]
     parms = generate_parm_list(service["parms"])
-    return "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis, qualifier=static, rtype=ret, name=name, parms=parms)
+    return "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis, qualifier=qual, rtype=ret, name=name, parms=parms)
 
 def generate_ctor_decl(ctor_desc, class_name):
     v = "protected: " if "protected" in ctor_desc["flags"] else "public: "
     parms = generate_parm_list(ctor_desc["parms"])
     decls = "{visibility}{name}({parms});\n".format(visibility=v, name=class_name, parms=parms)
 
-    parms = "void * impl" + ("" if parms == "" else ", " + parms)
-    return decls + "public: {name}({parms});\n".format(name=class_name, parms=parms)
+    #parms = list_str_prepend("void * impl", parms)
+    return decls #+ "public: {name}({parms});\n".format(name=class_name, parms=parms)
 
 def generate_dtor_decl(class_desc):
     return "public: ~{cname}();\n".format(cname=class_desc["name"])
@@ -155,6 +166,7 @@ def write_class_def(writer, class_desc):
     writer.write("class {name} {{\n".format(name=name))
 
     # write nested classes
+    writer.write("public:\n")
     for c in class_desc["types"]:
         write_class_def(writer, c)
 
@@ -170,11 +182,18 @@ def write_class_def(writer, class_desc):
         decls = generate_ctor_decl(ctor, name)
         writer.write(decls)
 
+    # write impl constructor
+    writer.write("public: {name}(void * impl);\n".format(name=name))
+
     # write impl init service delcaration
     writer.write("protected: void initializeFromImpl(void * impl);\n")
 
     dtor_decl = generate_dtor_decl(class_desc)
     writer.write(dtor_decl)
+
+    for callback in class_desc["callbacks"]:
+        decl = generate_service_decl(callback, is_callback=True)
+        writer.write(decl)
 
     for service in class_desc["services"]:
         decl = generate_service_decl(service)
@@ -188,16 +207,18 @@ def write_class_def(writer, class_desc):
 # source utilities ###################################################
 
 def write_arg_setup(writer, parm):
+    t = ("IlBuilder::" + parm["type"]) if parm["type"] in ["JBCase", "JBCondition"] else parm["type"]
     if is_in_out(parm):
-        writer.write("ARG_SETUP({t}, {n}Impl, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"]))
+        writer.write("ARG_SETUP({t}, {n}Impl, {n}Arg, {n});\n".format(t=t, n=parm["name"]))
     elif is_array(parm):
-        writer.write("ARRAY_ARG_SETUP({t}, {s}, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"], s=parm["array-len"]))
+        writer.write("ARRAY_ARG_SETUP({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
 def write_arg_return(writer, parm):
+    t = ("IlBuilder::" + parm["type"]) if parm["type"] in ["JBCase", "JBCondition"] else parm["type"]
     if is_in_out(parm):
-        writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=parm["type"], n=parm["name"]))
+        writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=t, n=parm["name"]))
     elif is_array(parm):
-        writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=parm["type"], n=parm["name"], s=parm["array-len"]))
+        writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
 def write_service_impl(writer, desc, class_name):
     rtype = type_map[desc["return"]]
@@ -221,11 +242,23 @@ def write_service_impl(writer, desc, class_name):
         writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
         writer.write("return clientObj;\n")
     else:
-        writer.write("auto reg = " + impl_call + ";\n")
+        writer.write("auto ret = " + impl_call + ";\n")
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
         writer.write("return ret;\n")
 
+    writer.write("}\n")
+
+def write_callback_thunk(writer, class_desc, callback_desc):
+    rtype = type_map[callback_desc["return"]]
+    thunk = callback_thunk_name(class_desc, callback_desc)
+    parms = list_str_prepend("void * clientObj", generate_parm_list(callback_desc["parms"]))
+    ctype = type_map[class_desc["name"]]
+    callback = callback_desc["name"]
+    args = generate_arg_list(callback_desc["parms"])
+    writer.write("{rtype} {thunk}({parms}) {{\n".format(rtype=rtype,thunk=thunk,parms=parms))
+    writer.write("{ctype} client = reinterpret_cast<{ctype}>(clientObj);\n".format(ctype=ctype))
+    writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
     writer.write("}\n")
 
 def write_class_impl(writer, class_desc, prefix=""):
@@ -244,32 +277,41 @@ def write_class_impl(writer, class_desc, prefix=""):
         writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n".format(cname=cname));
         writer.write("initializeFromImpl(_impl);\n")
         writer.write("}\n\n")
-
-        parms = "void * impl" + ("" if parms == "" else "," + parms)
-        writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
-        args = "impl" + "" if args == "" else "," + args
-        writer.write("if (impl != NULL) {\n")
-        writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n".format(cname=cname));
-        writer.write("initializeFromImpl(impl);\n")
-        writer.write("}\n")
-        writer.write("}\n")
     writer.write("\n")
 
+    writer.write("{cname}::{name}(void * impl) {{\n".format(cname=cname, name=class_desc["name"]))
+    writer.write("if (impl != NULL) {\n")
+    writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n".format(cname=cname));
+    writer.write("initializeFromImpl(impl);\n")
+    writer.write("}\n")
+    writer.write("}\n\n")
+
+    # write class initializer (called from all constructors"
     writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=cname))
     writer.write("_impl = impl;\n")
     for field in class_desc["fields"]:
         fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, reinterpret_cast<TR::{cname} *>(_impl)->{fname});\n"
         writer.write(fmt.format(fname=field["name"], ftype=field["type"], cname=cname))
         writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
-    writer.write("}\n")
+    for callback in class_desc["callbacks"]:
+        fmt = "reinterpret_cast<TR::{cname} *>(_impl)->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
+        registrar = callback_registrar_name(callback)
+        thunk = callback_thunk_name(class_desc, callback)
+        writer.write(fmt.format(cname=cname,registrar=registrar,thunk=thunk))
+    writer.write("}\n\n")
 
     # write destructor definition
-    writer.write("{cname}::~{cname}() {{}}\n".format(cname=cname))
+    writer.write("{cname}::~{name}() {{}}\n".format(cname=cname,name=class_desc["name"]))
     writer.write("\n")
 
     # write service definitions
     for s in class_desc["services"]:
         write_service_impl(writer, s, cname)
+        writer.write("\n")
+
+    # write callback thunk definitions
+    for callback in class_desc["callbacks"]:
+        write_callback_thunk(writer, class_desc, callback)
         writer.write("\n")
 
 # main generator #####################################################
@@ -279,6 +321,9 @@ def write_class_header(writer, class_desc, namespaces, class_names):
 
     writer.write(copyright_header)
     writer.write("\n")
+
+    writer.write("#ifndef {}_INCL\n".format(class_desc["name"]))
+    writer.write("#define {}_INCL\n\n".format(class_desc["name"]))
 
     if has_extras:
         writer.write(generate_include('{}ExtrasOutsideClass.hpp'.format(class_desc["name"])))
@@ -300,6 +345,9 @@ def write_class_header(writer, class_desc, namespaces, class_names):
     # close each openned namespace
     for n in reversed(namespaces):
         writer.write("}} // {}\n".format(n))
+    writer.write("\n")
+
+    writer.write("#endif // {}_INCL\n".format(class_desc["name"]))
 
 def write_class_source(writer, class_desc, namespaces, class_names):
     writer.write(copyright_header)
