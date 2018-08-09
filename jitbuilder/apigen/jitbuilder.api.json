@@ -34,6 +34,25 @@
                       ],
                   "services": [],
                   "callbacks": []
+                },
+                { "name": "JBCondition",
+                  "short-name": "JBCondition",
+                  "flags": [],
+                  "types": [],
+                  "fields": [],
+                  "constructors": [
+                      { "name": ""
+                      , "overloadsuffix": ""
+                      , "flags": []
+                      , "return": "none"
+                      , "parms": [
+                          {"name":"conditionBuilder","type":"IlBuilder"},
+                          {"name":"conditionValue","type":"IlValue"}
+                          ]
+                      }
+                      ],
+                  "services": [],
+                  "callbacks": []
                 }
                 ],
             "fields": [
