@@ -27,7 +27,7 @@
                       , "return": "none"
                       , "parms": [
                           {"name":"caseValue","type":"int32"},
-                          {"name":"caseBuilder","type":"IlBuilder","attributes":["in_out"]},
+                          {"name":"caseBuilder","type":"IlBuilder"},
                           {"name":"caseFallsThrough","type":"int32"}
                           ]
                       }
@@ -73,12 +73,6 @@
                 { "name": "Word", "type": "IlType", "assign_at_init": true }
                 ],
             "constructors": [
-                { "name": ""
-                , "overloadsuffix": ""
-                , "flags": [ "protected", "create_impl" ]
-                , "return": "none"
-                , "parms": []
-                }
                 ],
             "callbacks": [
                 { "name": "buildIL"
@@ -110,7 +104,7 @@
                 , "return": "IlValue"
                 , "parms": [{"name":"value","type":"IlValue"}]
                 },
-                { "name": "typedictionary"
+                { "name": "typeDictionary"
                 , "overloadsuffix": ""
                 , "flags": []
                 , "return": "TypeDictionary"
@@ -510,7 +504,7 @@
                     {"name":"value","type":"IlValue"}
                     ]
                 },
-                { "name": "LoadIndirect"
+                { "name": "StoreIndirect"
                 , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
@@ -578,7 +572,7 @@
                 , "return": "IlValue"
                 , "parms": [
                     {"name":"type","type":"IlType"},
-                    {"name":"address","type":"IlType"}
+                    {"name":"address","type":"IlValue"}
                     ]
                 },
                 { "name": "VectorStore"
@@ -590,12 +584,12 @@
                     {"name":"value","type":"IlValue"}
                     ]
                 },
-                { "name": "VectorLoadAt"
+                { "name": "VectorStoreAt"
                 , "overloadsuffix": ""
                 , "flags": []
-                , "return": "IlValue"
+                , "return": "none"
                 , "parms": [
-                    {"name":"address","type":"IlType"},
+                    {"name":"address","type":"IlValue"},
                     {"name":"value","type":"IlValue"}
                     ]
                 },
@@ -645,8 +639,8 @@
                     {"name":"continueBuilder","type":"IlBuilder","attributes":["in_out"]}
                     ]
                 },
-                { "name": "DoWhileLoop"
-                , "overloadsuffix": "WithBreak"
+                { "name": "DoWhileLoopWithBreak"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
                 , "parms": [
@@ -655,8 +649,8 @@
                     {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]}
                     ]
                 },
-                { "name": "DoWhileLoop"
-                , "overloadsuffix": "WithContinue"
+                { "name": "DoWhileLoopWithContinue"
+                , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
                 , "parms": [
@@ -703,7 +697,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -723,7 +717,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -743,7 +737,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -763,7 +757,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -783,7 +777,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -803,7 +797,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -823,7 +817,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -843,7 +837,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -863,7 +857,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -883,7 +877,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"left","type":"IlValue"},
                     {"name":"right","type":"IlValue"}
                     ]
@@ -902,7 +896,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"condition","type":"IlValue"}
                     ]
                 },
@@ -920,7 +914,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"target","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"target","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"condition","type":"IlValue"}
                     ]
                 },
@@ -940,7 +934,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"thenPath","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"thenPath","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"condition","type":"IlValue"}
                     ]
                 },
@@ -949,8 +943,8 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"thenPath","type":"IlBuilder","attribute":["in_out"]},
-                    {"name":"elsePath","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"thenPath","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"elsePath","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"condition","type":"IlValue"}
                     ]
                 },
@@ -961,9 +955,9 @@
                 , "parms": [
                     {"name":"countsUp","type":"boolean"},
                     {"name":"indVar","type":"string"},
-                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
-                    {"name":"breakBuilder","type":"IlBuilder","attribute":["in_out"]},
-                    {"name":"continueBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"initial","type":"IlValue"},
                     {"name":"iterateWhile","type":"IlValue"},
                     {"name":"increment","type":"IlValue"}
@@ -975,7 +969,7 @@
                 , "return": "none"
                 , "parms": [
                     {"name":"indVar","type":"string"},
-                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"initial","type":"IlValue"},
                     {"name":"iterateWhile","type":"IlValue"},
                     {"name":"increment","type":"IlValue"}
@@ -987,7 +981,7 @@
                 , "return": "none"
                 , "parms": [
                     {"name":"indVar","type":"string"},
-                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"initial","type":"IlValue"},
                     {"name":"iterateWhile","type":"IlValue"},
                     {"name":"increment","type":"IlValue"}
@@ -1000,8 +994,8 @@
                 , "parms": [
                     {"name":"countsUp","type":"boolean"},
                     {"name":"indVar","type":"string"},
-                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
-                    {"name":"breakBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"initial","type":"IlValue"},
                     {"name":"iterateWhile","type":"IlValue"},
                     {"name":"increment","type":"IlValue"}
@@ -1014,8 +1008,8 @@
                 , "parms": [
                     {"name":"countsUp","type":"boolean"},
                     {"name":"indVar","type":"string"},
-                    {"name":"body","type":"IlBuilder","attribute":["in_out"]},
-                    {"name":"continueBuilder","type":"IlBuilder","attribute":["in_out"]},
+                    {"name":"body","type":"IlBuilder","attributes":["in_out"]},
+                    {"name":"continueBuilder","type":"IlBuilder","attributes":["in_out"]},
                     {"name":"initial","type":"IlValue"},
                     {"name":"iterateWhile","type":"IlValue"},
                     {"name":"increment","type":"IlValue"}
@@ -1054,7 +1048,7 @@
                     {"name":"fallsThrough","type":"int32"}
                     ]
                 },
-                { "name": "WileDoLoop"
+                { "name": "WhileDoLoop"
                 , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
@@ -1063,7 +1057,7 @@
                     {"name":"body","type":"IlBuilder","attributes":["in_out"]}
                     ]
                 },
-                { "name": "WileDoLoopWithBreak"
+                { "name": "WhileDoLoopWithBreak"
                 , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
@@ -1073,7 +1067,7 @@
                     {"name":"breakBuilder","type":"IlBuilder","attributes":["in_out"]}
                     ]
                 },
-                { "name": "WileDoLoopWithContinue"
+                { "name": "WhileDoLoopWithContinue"
                 , "overloadsuffix": ""
                 , "flags": []
                 , "return": "none"
