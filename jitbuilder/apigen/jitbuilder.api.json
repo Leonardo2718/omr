@@ -671,6 +671,15 @@
                 , "return": "none"
                 , "parms": [ {"name":"b","type":"IlBuilder","attributes":["in_out"]} ]
                 },
+                { "name": "MakeCondition"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "JBCondition"
+                , "parms": [
+                    {"name":"conditionBuilder","type":"IlBuilder"},
+                    {"name":"conditionValue","type":"IlValue"}
+                    ]
+                },
                 { "name": "IfAnd"
                 , "overloadsuffix": "WithArgArray"
                 , "flags": []
