@@ -105,12 +105,18 @@ def is_in_out(parm_desc):
 def is_array(parm_desc):
     return "attributes" in parm_desc and "array" in parm_desc["attributes"]
 
+def is_vararg(parm_desc):
+    return reduce(lambda l,r: l or r, ["can_be_vararg" in p["attributes"] for p in parm_desc["parms"] if "attributes" in p], False)
+
 def generate_parm(parm_desc):
     fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
     return fmt.format(t=type_map[parm_desc["type"]],n=parm_desc["name"])
 
 def generate_parm_list(parms_desc):
     return ", ".join([ generate_parm(p) for p in parms_desc ])
+
+def generate_vararg_parm_list(parms_desc):
+    return ", ".join(["..." if "attributes" in p and "can_be_vararg" in p["attributes"] else generate_parm(p) for p in parms_desc])
 
 def generate_arg(parm_desc):
     n = parm_desc["name"]
@@ -146,7 +152,13 @@ def generate_service_decl(service, with_visibility = True, is_callback=False):
     ret = type_map[service["return"]]
     name = service["name"]
     parms = generate_parm_list(service["parms"])
-    return "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis, qualifier=qual, rtype=ret, name=name, parms=parms)
+
+    decl = "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis, qualifier=qual, rtype=ret, name=name, parms=parms)
+    if is_vararg(service):
+        parms = generate_vararg_parm_list(service["parms"])
+        decl = decl + "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis,qualifier=qual,rtype=ret,name=name,parms=parms)
+
+    return decl
 
 def generate_ctor_decl(ctor_desc, class_name):
     v = "protected: " if "protected" in ctor_desc["flags"] else "public: "
@@ -247,6 +259,32 @@ def write_service_impl(writer, desc, class_name):
             write_arg_return(writer, parm)
         writer.write("return ret;\n")
 
+    writer.write("}\n")
+
+    if is_vararg(desc):
+        writer.write("\n")
+        write_vararg_service_impl(writer, desc, class_name)
+
+def write_vararg_service_impl(writer, desc, class_name):
+    rtype = type_map[desc["return"]]
+    name = desc["name"]
+    vararg = desc["parms"][-1]
+    vararg_type = type_map[vararg["type"]]
+
+    parms = generate_vararg_parm_list(desc["parms"])
+    writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype,cname=class_name,name=name,parms=parms))
+
+    args = ", ".join([p["name"] for p in desc["parms"]])
+    writer.write("{t}* {arg} = new {t}[{num}];\n".format(t=vararg_type,arg=vararg["name"],num=vararg["array-len"]))
+    writer.write("va_list vararg;\n")
+    writer.write("va_start(vararg, {num});\n".format(num=vararg["array-len"]))
+    writer.write("for (int i = 0; i < {num}; ++i) {{ {arg}[i] = va_arg(vararg, {t}); }}\n".format(num=vararg["array-len"],arg=vararg["name"],t=vararg_type))
+    writer.write("va_end(vararg);\n")
+    get_ret = "" if "none" == desc["return"] else "{rtype} ret = ".format(rtype=rtype)
+    writer.write("{get_ret}{name}({args});\n".format(get_ret=get_ret,name=name,args=args))
+    writer.write("delete[] {arg};\n".format(arg=vararg["name"]))
+    if "none" != desc["return"]:
+        writer.write("return ret;\n")
     writer.write("}\n")
 
 def write_callback_thunk(writer, class_desc, callback_desc):
