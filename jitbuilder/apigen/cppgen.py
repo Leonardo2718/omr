@@ -40,42 +40,42 @@ type_map = { "none": "void"
            , "double": "double"
            , "pointer": "void *"
            , "ppointer": "void **"
-           , "unsignedInteger": "size_t" # really?! should be `usize_t`
+           , "unsignedInteger": "size_t"
            , "constString": "const char *"
            , "string": "char *"
            , "booleanArray": "bool *"
            , "int32Array": "int32_t *"
            #, "vararg": "..."
            , "BytecodeBuilder": "BytecodeBuilder *"
-           , "BytecodeBuilderArray": "BytecodeBuilder **"
+           #, "BytecodeBuilderArray": "BytecodeBuilder **"
            #, "BytecodeBuilderByRef": "BytecodeBuilder **"
-           , "BytecodeBuilderImpl": "TR::BytecodeBuilder *"
-           , "ppBytecodeBuilder": "BytecodeBuilder **"
+           #, "BytecodeBuilderImpl": "TR::BytecodeBuilder *"
+           #, "ppBytecodeBuilder": "BytecodeBuilder **"
            , "IlBuilder": "IlBuilder *"
-           , "IlBuilderArray": "IlBuilder **"
+           #, "IlBuilderArray": "IlBuilder **"
            #, "IlBuilderByRef": "IlBuilder **"
-           , "IlBuilderImpl": "TR::IlBuilder *"
-           , "ppIlBuilder": "IlBuilder **"
+           #, "IlBuilderImpl": "TR::IlBuilder *"
+           #, "ppIlBuilder": "IlBuilder **"
            , "MethodBuilder": "MethodBuilder *"
-           , "MethodBuilderImpl": "TR::MethodBuilder *"
+           #, "MethodBuilderImpl": "TR::MethodBuilder *"
            , "JBCase": "IlBuilder::JBCase *"
            , "JBCondition": "IlBuilder::JBCondition *"
            , "IlReference": "IlReference *"
            , "IlType": "IlType *"
-           , "IlTypeArray": "IlType **"
-           , "IlTypeImplr": "TR::IlType *"
+           #, "IlTypeArray": "IlType **"
+           #, "IlTypeImplr": "TR::IlType *"
            , "IlValue": "IlValue *"
-           , "IlValueArray": "IlValue **"
-           , "IlValueImpl": "TR::IlValue *"
+           #, "IlValueArray": "IlValue **"
+           #, "IlValueImpl": "TR::IlValue *"
            , "ThunkBuilder": "ThunkBuilder *"
            , "TypeDictionary": "TypeDictionary *"
-           , "TypeDictionaryImpl": "TR::TypeDictionary *"
+           #, "TypeDictionaryImpl": "TR::TypeDictionary *"
            , "VirtualMachineOperandArray": "VirtualMachineOperandArray *"
            , "VirtualMachineOperandStack": "VirtualMachineOperandStack *"
            , "VirtualMachineRegister": "VirtualMachineRegister *"
            , "VirtualMachineRegisterInStruct": "VirtualMachineRegisterInStruct *"
            , "VirtualMachineState": "VirtualMachineState *"
-           , "VirtualMachineStateImpl": "TR::VirtualMachineState *"
+           #, "VirtualMachineStateImpl": "TR::VirtualMachineState *"
            }
 
 def generate_include(path):
@@ -93,8 +93,11 @@ def needs_impl(t):
                 , "VirtualMachineState"
                 ]
 
-def get_impl_type(t, attrs = None):
-    return "TR::{}".format(type_map[t]) if needs_impl(t) else type_map[t]
+def get_client_type(t):
+    return type_map[t]
+
+def get_impl_type(t):
+    return "TR::{}".format(type_map[t]) if needs_impl(t) else get_client_type(t)
 
 def grab_impl(v, t):
     return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if needs_impl(t) else v
@@ -110,7 +113,8 @@ def is_vararg(parm_desc):
 
 def generate_parm(parm_desc):
     fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
-    return fmt.format(t=type_map[parm_desc["type"]],n=parm_desc["name"])
+    t = get_client_type(parm_desc["type"])
+    return fmt.format(t=t,n=parm_desc["name"])
 
 def generate_parm_list(parms_desc):
     return ", ".join([ generate_parm(p) for p in parms_desc ])
@@ -139,7 +143,7 @@ def list_str_prepend(pre, list_str):
 
 def generate_field_decl(field, with_visibility = True):
     """Generate a field from its description"""
-    t = type_map[field["type"]]
+    t = get_client_type(field["type"])
     n = field["name"]
     v = "public: " if with_visibility else ""
     return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
@@ -149,7 +153,7 @@ def generate_service_decl(service, with_visibility = True, is_callback=False):
     vis = "" if not with_visibility else "protected: " if "protected" in service["flags"] else "public: "
     static = "static" if "static" in service["flags"] else ""
     qual = ("virtual" if is_callback else " ") + static
-    ret = type_map[service["return"]]
+    ret = get_client_type(service["return"])
     name = service["name"]
     parms = generate_parm_list(service["parms"])
 
@@ -164,9 +168,7 @@ def generate_ctor_decl(ctor_desc, class_name):
     v = "protected: " if "protected" in ctor_desc["flags"] else "public: "
     parms = generate_parm_list(ctor_desc["parms"])
     decls = "{visibility}{name}({parms});\n".format(visibility=v, name=class_name, parms=parms)
-
-    #parms = list_str_prepend("void * impl", parms)
-    return decls #+ "public: {name}({parms});\n".format(name=class_name, parms=parms)
+    return decls
 
 def generate_dtor_decl(class_desc):
     return "public: ~{cname}();\n".format(cname=class_desc["name"])
@@ -223,7 +225,7 @@ def write_ctor_impl(writer, ctor_desc, cname, class_desc):
     writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
     args = generate_arg_list(ctor_desc["parms"])
     writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
-    writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n".format(cname=cname));
+    writer.write("reinterpret_cast<{ctype}>(_impl)->setClient(this);\n".format(ctype=get_impl_type(class_desc["name"])))
     writer.write("initializeFromImpl(_impl);\n")
     writer.write("}\n")
 
@@ -242,7 +244,7 @@ def write_arg_return(writer, parm):
         writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
 def write_service_impl(writer, desc, class_name):
-    rtype = type_map[desc["return"]]
+    rtype = get_client_type(desc["return"])
     name = desc["name"]
     parms = generate_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
@@ -251,7 +253,7 @@ def write_service_impl(writer, desc, class_name):
         write_arg_setup(writer, parm)
 
     args = generate_arg_list(desc["parms"])
-    impl_call = "reinterpret_cast<TR::{cname} *>(_impl)->{sname}({args})".format(cname=class_name,sname=name,args=args)
+    impl_call = "reinterpret_cast<{ctype}>(_impl)->{sname}({args})".format(ctype=get_impl_type(class_name),sname=name,args=args)
     if "none" == desc["return"]:
         writer.write(impl_call + ";\n")
         for parm in desc["parms"]:
@@ -275,10 +277,10 @@ def write_service_impl(writer, desc, class_name):
         write_vararg_service_impl(writer, desc, class_name)
 
 def write_vararg_service_impl(writer, desc, class_name):
-    rtype = type_map[desc["return"]]
+    rtype = get_client_type(desc["return"])
     name = desc["name"]
     vararg = desc["parms"][-1]
-    vararg_type = type_map[vararg["type"]]
+    vararg_type = get_client_type(vararg["type"])
 
     parms = generate_vararg_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype,cname=class_name,name=name,parms=parms))
@@ -297,10 +299,10 @@ def write_vararg_service_impl(writer, desc, class_name):
     writer.write("}\n")
 
 def write_callback_thunk(writer, class_desc, callback_desc):
-    rtype = type_map[callback_desc["return"]]
+    rtype = get_client_type(callback_desc["return"])
     thunk = callback_thunk_name(class_desc, callback_desc)
     parms = list_str_prepend("void * clientObj", generate_parm_list(callback_desc["parms"]))
-    ctype = type_map[class_desc["name"]]
+    ctype = get_client_type(class_desc["name"])
     callback = callback_desc["name"]
     args = generate_arg_list(callback_desc["parms"])
     writer.write("{rtype} {thunk}({parms}) {{\n".format(rtype=rtype,thunk=thunk,parms=parms))
@@ -322,7 +324,7 @@ def write_class_impl(writer, class_desc, prefix=""):
 
     writer.write("{cname}::{name}(void * impl) {{\n".format(cname=cname, name=class_desc["name"]))
     writer.write("if (impl != NULL) {\n")
-    writer.write("reinterpret_cast<TR::{cname} *>(impl)->setClient(this);\n".format(cname=cname));
+    writer.write("reinterpret_cast<{ctype}>(impl)->setClient(this);\n".format(ctype=get_impl_type(class_desc["name"])));
     writer.write("initializeFromImpl(impl);\n")
     writer.write("}\n")
     writer.write("}\n\n")
@@ -331,14 +333,14 @@ def write_class_impl(writer, class_desc, prefix=""):
     writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=cname))
     writer.write("_impl = impl;\n")
     for field in class_desc["fields"]:
-        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, reinterpret_cast<TR::{cname} *>(_impl)->{fname});\n"
-        writer.write(fmt.format(fname=field["name"], ftype=field["type"], cname=cname))
+        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, reinterpret_cast<{ctype}>(_impl)->{fname});\n"
+        writer.write(fmt.format(fname=field["name"], ftype=field["type"], ctype=get_impl_type(class_desc["name"])))
         writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
     for callback in class_desc["callbacks"]:
-        fmt = "reinterpret_cast<TR::{cname} *>(_impl)->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
+        fmt = "reinterpret_cast<{ctype}>(_impl)->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
         registrar = callback_registrar_name(callback)
         thunk = callback_thunk_name(class_desc, callback)
-        writer.write(fmt.format(cname=cname,registrar=registrar,thunk=thunk))
+        writer.write(fmt.format(ctype=get_impl_type(class_desc["name"]),registrar=registrar,thunk=thunk))
     writer.write("}\n\n")
 
     # write destructor definition
