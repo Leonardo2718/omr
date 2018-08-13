@@ -29,78 +29,61 @@ copyright_header = """\
 # Generic utilities ##################################################
 
 # mapping between API type descriptions and C++ data types
-type_map = { "none": "void"
-           , "boolean": "bool"
-           , "integer": "size_t"
-           , "int8": "int8_t"
-           , "int16": "int16_t"
-           , "int32": "int32_t"
-           , "int64": "int64_t"
-           , "float": "float"
-           , "double": "double"
-           , "pointer": "void *"
-           , "ppointer": "void **"
-           , "unsignedInteger": "size_t"
-           , "constString": "const char *"
-           , "string": "char *"
-           , "booleanArray": "bool *"
-           , "int32Array": "int32_t *"
-           #, "vararg": "..."
-           , "BytecodeBuilder": "BytecodeBuilder *"
-           #, "BytecodeBuilderArray": "BytecodeBuilder **"
-           #, "BytecodeBuilderByRef": "BytecodeBuilder **"
-           #, "BytecodeBuilderImpl": "TR::BytecodeBuilder *"
-           #, "ppBytecodeBuilder": "BytecodeBuilder **"
-           , "IlBuilder": "IlBuilder *"
-           #, "IlBuilderArray": "IlBuilder **"
-           #, "IlBuilderByRef": "IlBuilder **"
-           #, "IlBuilderImpl": "TR::IlBuilder *"
-           #, "ppIlBuilder": "IlBuilder **"
-           , "MethodBuilder": "MethodBuilder *"
-           #, "MethodBuilderImpl": "TR::MethodBuilder *"
-           , "JBCase": "IlBuilder::JBCase *"
-           , "JBCondition": "IlBuilder::JBCondition *"
-           , "IlReference": "IlReference *"
-           , "IlType": "IlType *"
-           #, "IlTypeArray": "IlType **"
-           #, "IlTypeImplr": "TR::IlType *"
-           , "IlValue": "IlValue *"
-           #, "IlValueArray": "IlValue **"
-           #, "IlValueImpl": "TR::IlValue *"
-           , "ThunkBuilder": "ThunkBuilder *"
-           , "TypeDictionary": "TypeDictionary *"
-           #, "TypeDictionaryImpl": "TR::TypeDictionary *"
-           , "VirtualMachineOperandArray": "VirtualMachineOperandArray *"
-           , "VirtualMachineOperandStack": "VirtualMachineOperandStack *"
-           , "VirtualMachineRegister": "VirtualMachineRegister *"
-           , "VirtualMachineRegisterInStruct": "VirtualMachineRegisterInStruct *"
-           , "VirtualMachineState": "VirtualMachineState *"
-           #, "VirtualMachineStateImpl": "TR::VirtualMachineState *"
-           }
+builtin_type_map = { "none": "void"
+                   , "boolean": "bool"
+                   , "integer": "size_t"
+                   , "int8": "int8_t"
+                   , "int16": "int16_t"
+                   , "int32": "int32_t"
+                   , "int64": "int64_t"
+                   , "float": "float"
+                   , "double": "double"
+                   , "pointer": "void *"
+                   , "ppointer": "void **"
+                   , "unsignedInteger": "size_t"
+                   , "constString": "const char *"
+                   , "string": "char *"
+                   }
+
+class_type_map = { "BytecodeBuilder": "BytecodeBuilder"
+                 , "IlBuilder": "IlBuilder"
+                 , "MethodBuilder": "MethodBuilder"
+                 , "JBCase": "IlBuilder::JBCase"
+                 , "JBCondition": "IlBuilder::JBCondition"
+                 , "IlReference": "IlReference"
+                 , "IlType": "IlType"
+                 , "IlValue": "IlValue"
+                 , "ThunkBuilder": "ThunkBuilder"
+                 , "TypeDictionary": "TypeDictionary"
+                 , "VirtualMachineOperandArray": "VirtualMachineOperandArray"
+                 , "VirtualMachineOperandStack": "VirtualMachineOperandStack"
+                 , "VirtualMachineRegister": "VirtualMachineRegister"
+                 , "VirtualMachineRegisterInStruct": "VirtualMachineRegisterInStruct"
+                 , "VirtualMachineState": "VirtualMachineState"
+                 }
 
 def generate_include(path):
     return '#include "{}"\n'.format(path)
 
-def needs_impl(t):
-    return t in [ "BytecodeBuilder"
-                , "IlBuilder"
-                , "JBCase"
-                , "JBCondition"
-                , "MethodBuilder"
-                , "IlType"
-                , "IlValue"
-                , "TypeDictionary"
-                , "VirtualMachineState"
-                ]
+def is_class(t):
+    return t in class_type_map
+
+def get_class_name(t):
+    assert is_class(t), "Cannot get name for non-class type {}".format(t)
+    return class_type_map[t]
+
+def get_impl_class_name(t):
+    assert is_class(t), "Cannot get name for non-class type {}".format(t)
+    return "TR::{}".format(class_type_map[t])
 
 def get_client_type(t):
-    return type_map[t]
+    return "{} *".format(get_class_name(t)) if is_class(t) else builtin_type_map[t]
 
 def get_impl_type(t):
-    return "TR::{}".format(type_map[t]) if needs_impl(t) else get_client_type(t)
+    return "{} *".format(get_impl_class_name(t)) if is_class(t) else builtin_type_map[t]
 
 def grab_impl(v, t):
-    return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if needs_impl(t) else v
+    return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if is_class(t) else v
 
 def is_in_out(parm_desc):
     return "attributes" in parm_desc and "in_out" in parm_desc["attributes"]
@@ -220,27 +203,34 @@ def write_class_def(writer, class_desc):
 
 # source utilities ###################################################
 
-def write_ctor_impl(writer, ctor_desc, cname, class_desc):
+def write_ctor_impl(writer, ctor_desc, class_desc):
     parms = generate_parm_list(ctor_desc["parms"])
-    writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
+    name = class_desc["name"]
+    writer.write("{cname}::{name}({parms}) {{\n".format(cname=get_class_name(name), name=name, parms=parms))
     args = generate_arg_list(ctor_desc["parms"])
-    writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
-    writer.write("reinterpret_cast<{ctype}>(_impl)->setClient(this);\n".format(ctype=get_impl_type(class_desc["name"])))
+    writer.write("_impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
+    writer.write("reinterpret_cast<{ctype}>(_impl)->setClient(this);\n".format(ctype=get_impl_type(name)))
     writer.write("initializeFromImpl(_impl);\n")
     writer.write("}\n")
 
 def write_arg_setup(writer, parm):
-    t = ("IlBuilder::" + parm["type"]) if parm["type"] in ["JBCase", "JBCondition"] else parm["type"]
     if is_in_out(parm):
+        assert is_class(parm["type"])
+        t = get_class_name(parm["type"])
         writer.write("ARG_SETUP({t}, {n}Impl, {n}Arg, {n});\n".format(t=t, n=parm["name"]))
     elif is_array(parm):
+        assert is_class(parm["type"])
+        t = get_class_name(parm["type"])
         writer.write("ARRAY_ARG_SETUP({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
 def write_arg_return(writer, parm):
-    t = ("IlBuilder::" + parm["type"]) if parm["type"] in ["JBCase", "JBCondition"] else parm["type"]
     if is_in_out(parm):
+        assert is_class(parm["type"])
+        t = get_class_name(parm["type"])
         writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=t, n=parm["name"]))
     elif is_array(parm):
+        assert is_class(parm["type"])
+        t = get_class_name(parm["type"])
         writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
 def write_service_impl(writer, desc, class_name):
@@ -258,7 +248,7 @@ def write_service_impl(writer, desc, class_name):
         writer.write(impl_call + ";\n")
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
-    elif needs_impl(desc["return"]):
+    elif is_class(desc["return"]):
         writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc["return"]), call=impl_call))
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
@@ -310,19 +300,20 @@ def write_callback_thunk(writer, class_desc, callback_desc):
     writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
     writer.write("}\n")
 
-def write_class_impl(writer, class_desc, prefix=""):
-    cname = prefix + class_desc["name"]
+def write_class_impl(writer, class_desc):
+    name = class_desc["name"]
+    full_name = get_class_name(name)
 
     # write source for iner classes first
     for c in class_desc["types"]:
-        write_class_impl(writer, c, cname + "::" )
+        write_class_impl(writer, c)
 
     # write constructor definitions
     for ctor in class_desc["constructors"]:
-        write_ctor_impl(writer, ctor, cname, class_desc)
+        write_ctor_impl(writer, ctor, class_desc)
     writer.write("\n")
 
-    writer.write("{cname}::{name}(void * impl) {{\n".format(cname=cname, name=class_desc["name"]))
+    writer.write("{cname}::{name}(void * impl) {{\n".format(cname=full_name, name=name))
     writer.write("if (impl != NULL) {\n")
     writer.write("reinterpret_cast<{ctype}>(impl)->setClient(this);\n".format(ctype=get_impl_type(class_desc["name"])));
     writer.write("initializeFromImpl(impl);\n")
@@ -330,7 +321,7 @@ def write_class_impl(writer, class_desc, prefix=""):
     writer.write("}\n\n")
 
     # write class initializer (called from all constructors"
-    writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=cname))
+    writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=full_name))
     writer.write("_impl = impl;\n")
     for field in class_desc["fields"]:
         fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, reinterpret_cast<{ctype}>(_impl)->{fname});\n"
@@ -344,12 +335,12 @@ def write_class_impl(writer, class_desc, prefix=""):
     writer.write("}\n\n")
 
     # write destructor definition
-    writer.write("{cname}::~{name}() {{}}\n".format(cname=cname,name=class_desc["name"]))
+    writer.write("{cname}::~{name}() {{}}\n".format(cname=full_name,name=name))
     writer.write("\n")
 
     # write service definitions
     for s in class_desc["services"]:
-        write_service_impl(writer, s, cname)
+        write_service_impl(writer, s, get_class_name(class_desc["name"]))
         writer.write("\n")
 
     # write callback thunk definitions
