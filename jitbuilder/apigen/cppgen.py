@@ -195,7 +195,7 @@ def write_class_def(writer, class_desc):
         writer.write(decls)
 
     # write impl constructor
-    writer.write("public: {name}(void * impl);\n".format(name=name))
+    writer.write("public: explicit {name}(void * impl);\n".format(name=name))
 
     # write impl init service delcaration
     writer.write("protected: void initializeFromImpl(void * impl);\n")
@@ -217,6 +217,15 @@ def write_class_def(writer, class_desc):
     writer.write('};\n')
 
 # source utilities ###################################################
+
+def write_ctor_impl(writer, ctor_desc, cname, class_desc):
+    parms = generate_parm_list(ctor_desc["parms"])
+    writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
+    args = generate_arg_list(ctor_desc["parms"])
+    writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
+    writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n".format(cname=cname));
+    writer.write("initializeFromImpl(_impl);\n")
+    writer.write("}\n")
 
 def write_arg_setup(writer, parm):
     t = ("IlBuilder::" + parm["type"]) if parm["type"] in ["JBCase", "JBCondition"] else parm["type"]
@@ -308,13 +317,7 @@ def write_class_impl(writer, class_desc, prefix=""):
 
     # write constructor definitions
     for ctor in class_desc["constructors"]:
-        parms = generate_parm_list(ctor["parms"])
-        writer.write("{cname}::{name}({parms}) {{\n".format(cname=cname, name=class_desc["name"], parms=parms))
-        args = generate_arg_list(ctor["parms"])
-        writer.write("_impl = new TR::{cname}({args});\n".format(cname=cname, args=args))
-        writer.write("reinterpret_cast<TR::{cname} *>(_impl)->setClient(this);\n".format(cname=cname));
-        writer.write("initializeFromImpl(_impl);\n")
-        writer.write("}\n\n")
+        write_ctor_impl(writer, ctor, cname, class_desc)
     writer.write("\n")
 
     writer.write("{cname}::{name}(void * impl) {{\n".format(cname=cname, name=class_desc["name"]))
