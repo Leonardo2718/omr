@@ -10,6 +10,21 @@
     "services": [],
     "classes": [
         {
+            "name":"BytecodeBuilder",
+            "short-name": "BB",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
             "name": "IlBuilder",
             "short-name": "IB",
             "flags": [
@@ -1089,6 +1104,81 @@
                 ]
         },
         {
+            "name": "MethodBuilder",
+            "short-name": "MB",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name":"IlReference",
+            "short-name": "IR",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name":"IlType",
+            "short-name": "IT",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name":"IlValue",
+            "short-name": "IV",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name":"ThunkBuilder",
+            "short-name": "TB",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
             "name": "TypeDictionary",
             "short-name": "TD",
             "flags": [ "creatable", "has_extras_header" ],
@@ -1245,6 +1335,81 @@
                     {"name":"fieldName","type":"constString"} ]
                 }
             ]
+        },
+        {
+            "name": "VirtualMachineOperandArray",
+            "short-name": "VMOA",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name": "VirtualMachineOperandStack",
+            "short-name": "VMOS",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name": "VirtualMachineRegister",
+            "short-name": "VMR",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name":"VirtualMachineRegisterInStruct",
+            "short-name": "VMRIS",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
+        },
+        {
+            "name":"VirtualMachineState",
+            "short-name": "VMS",
+            "flags":[
+                ],
+            "types": [],
+            "fields": [
+                ],
+            "constructors": [
+                ],
+            "callbacks": [
+                ],
+            "services": [
+                ]
         }
         ]
 }
