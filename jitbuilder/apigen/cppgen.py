@@ -76,14 +76,25 @@ def get_impl_class_name(t):
     assert is_class(t), "Cannot get name for non-class type {}".format(t)
     return "TR::{}".format(class_type_map[t])
 
-def get_client_type(t):
+def as_client_type(t):
     return "{} *".format(get_class_name(t)) if is_class(t) else builtin_type_map[t]
 
-def get_impl_type(t):
+def as_impl_type(t):
     return "{} *".format(get_impl_class_name(t)) if is_class(t) else builtin_type_map[t]
 
+def to_impl_cast(t, v):
+    assert is_class(t), "Can only generate cast to implementation type for class types, not {}".format(t)
+    return "reinterpret_cast<{t}>({v})".format(t=as_impl_type(t),v=v)
+
+def to_opaque_cast(v, from_t):
+    return "static_cast<void *>(v)".format(v=v)
+
+def to_client_cast(t, v):
+    assert is_class(t), "Can only generate cast to client type for class types, not {}".format(t)
+    return "reinterpret_cast<{t}>({v})".format(t=as_client_type(t),v=v)
+
 def grab_impl(v, t):
-    return "reinterpret_cast<{t}>({v} != NULL ? {v}->_impl : NULL)".format(v=v,t=get_impl_type(t)) if is_class(t) else v
+    return to_impl_cast(t, "{v} != NULL ? {v}->_impl : NULL".format(v=v)) if is_class(t) else v
 
 def is_in_out(parm_desc):
     return "attributes" in parm_desc and "in_out" in parm_desc["attributes"]
@@ -96,7 +107,7 @@ def is_vararg(parm_desc):
 
 def generate_parm(parm_desc):
     fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
-    t = get_client_type(parm_desc["type"])
+    t = as_client_type(parm_desc["type"])
     return fmt.format(t=t,n=parm_desc["name"])
 
 def generate_parm_list(parms_desc):
@@ -126,7 +137,7 @@ def list_str_prepend(pre, list_str):
 
 def generate_field_decl(field, with_visibility = True):
     """Generate a field from its description"""
-    t = get_client_type(field["type"])
+    t = as_client_type(field["type"])
     n = field["name"]
     v = "public: " if with_visibility else ""
     return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
@@ -136,7 +147,7 @@ def generate_service_decl(service, with_visibility = True, is_callback=False):
     vis = "" if not with_visibility else "protected: " if "protected" in service["flags"] else "public: "
     static = "static" if "static" in service["flags"] else ""
     qual = ("virtual" if is_callback else " ") + static
-    ret = get_client_type(service["return"])
+    ret = as_client_type(service["return"])
     name = service["name"]
     parms = generate_parm_list(service["parms"])
 
@@ -209,7 +220,7 @@ def write_ctor_impl(writer, ctor_desc, class_desc):
     writer.write("{cname}::{name}({parms}) {{\n".format(cname=get_class_name(name), name=name, parms=parms))
     args = generate_arg_list(ctor_desc["parms"])
     writer.write("_impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
-    writer.write("reinterpret_cast<{ctype}>(_impl)->setClient(this);\n".format(ctype=get_impl_type(name)))
+    writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"_impl")))
     writer.write("initializeFromImpl(_impl);\n")
     writer.write("}\n")
 
@@ -234,7 +245,7 @@ def write_arg_return(writer, parm):
         writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
 def write_service_impl(writer, desc, class_name):
-    rtype = get_client_type(desc["return"])
+    rtype = as_client_type(desc["return"])
     name = desc["name"]
     parms = generate_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
@@ -243,13 +254,13 @@ def write_service_impl(writer, desc, class_name):
         write_arg_setup(writer, parm)
 
     args = generate_arg_list(desc["parms"])
-    impl_call = "reinterpret_cast<{ctype}>(_impl)->{sname}({args})".format(ctype=get_impl_type(class_name),sname=name,args=args)
+    impl_call = "{impl_cast}->{sname}({args})".format(impl_cast=to_impl_cast(class_name,"_impl"),sname=name,args=args)
     if "none" == desc["return"]:
         writer.write(impl_call + ";\n")
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
     elif is_class(desc["return"]):
-        writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc["return"]), call=impl_call))
+        writer.write("{rtype} implRet = {call};\n".format(rtype=as_impl_type(desc["return"]), call=impl_call))
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
         writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
@@ -267,10 +278,10 @@ def write_service_impl(writer, desc, class_name):
         write_vararg_service_impl(writer, desc, class_name)
 
 def write_vararg_service_impl(writer, desc, class_name):
-    rtype = get_client_type(desc["return"])
+    rtype = as_client_type(desc["return"])
     name = desc["name"]
     vararg = desc["parms"][-1]
-    vararg_type = get_client_type(vararg["type"])
+    vararg_type = as_client_type(vararg["type"])
 
     parms = generate_vararg_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype,cname=class_name,name=name,parms=parms))
@@ -289,14 +300,14 @@ def write_vararg_service_impl(writer, desc, class_name):
     writer.write("}\n")
 
 def write_callback_thunk(writer, class_desc, callback_desc):
-    rtype = get_client_type(callback_desc["return"])
+    rtype = as_client_type(callback_desc["return"])
     thunk = callback_thunk_name(class_desc, callback_desc)
     parms = list_str_prepend("void * clientObj", generate_parm_list(callback_desc["parms"]))
-    ctype = get_client_type(class_desc["name"])
+    ctype = as_client_type(class_desc["name"])
     callback = callback_desc["name"]
     args = generate_arg_list(callback_desc["parms"])
     writer.write("{rtype} {thunk}({parms}) {{\n".format(rtype=rtype,thunk=thunk,parms=parms))
-    writer.write("{ctype} client = reinterpret_cast<{ctype}>(clientObj);\n".format(ctype=ctype))
+    writer.write("{ctype} client = {clientObj};\n".format(ctype=ctype,clientObj=to_client_cast(class_desc["name"],"clientObj")))
     writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
     writer.write("}\n")
 
@@ -315,7 +326,7 @@ def write_class_impl(writer, class_desc):
 
     writer.write("{cname}::{name}(void * impl) {{\n".format(cname=full_name, name=name))
     writer.write("if (impl != NULL) {\n")
-    writer.write("reinterpret_cast<{ctype}>(impl)->setClient(this);\n".format(ctype=get_impl_type(class_desc["name"])));
+    writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")));
     writer.write("initializeFromImpl(impl);\n")
     writer.write("}\n")
     writer.write("}\n\n")
@@ -324,14 +335,14 @@ def write_class_impl(writer, class_desc):
     writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=full_name))
     writer.write("_impl = impl;\n")
     for field in class_desc["fields"]:
-        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, reinterpret_cast<{ctype}>(_impl)->{fname});\n"
-        writer.write(fmt.format(fname=field["name"], ftype=field["type"], ctype=get_impl_type(class_desc["name"])))
+        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
+        writer.write(fmt.format(fname=field["name"], ftype=field["type"], impl_cast=to_impl_cast(name,"_impl")))
         writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
     for callback in class_desc["callbacks"]:
-        fmt = "reinterpret_cast<{ctype}>(_impl)->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
+        fmt = "{impl_cast}->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
         registrar = callback_registrar_name(callback)
         thunk = callback_thunk_name(class_desc, callback)
-        writer.write(fmt.format(ctype=get_impl_type(class_desc["name"]),registrar=registrar,thunk=thunk))
+        writer.write(fmt.format(impl_cast=to_impl_cast(name,"_impl"),registrar=registrar,thunk=thunk))
     writer.write("}\n\n")
 
     # write destructor definition
