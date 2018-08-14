@@ -1226,6 +1226,7 @@
                 , "flags": []
                 , "return": "none"
                 , "parms": [
+                    {"name":"name","type":"constString"},
                     {"name":"fileName","type":"constString"},
                     {"name":"lineNumber","type":"constString"},
                     {"name":"entryPoint","type":"pointer"},
@@ -1233,6 +1234,18 @@
                     {"name":"numParms","type":"int32"},
                     {"name":"parmTypes","type":"IlType","attributes":["array","can_be_vararg"],"array-len":"numParms"}
                     ]
+                },
+                { "name": "GetNextBytecodeFromWorklist"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "int32"
+                , "parms": []
+                },
+                { "name": "setVMState"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"vmState","type":"VirtualMachineState"} ]
                 }
                 ]
         },
