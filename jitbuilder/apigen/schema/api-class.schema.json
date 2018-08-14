@@ -14,6 +14,7 @@
             "type": "array",
             "items": { "enum": [ "creatable", "has_extras_header", "allocates_class" ] }
         },
+        "extends": { "type": "string" },
         "types": {
             "description": "Definition of datatypes used by the API",
             "type": "array",
