@@ -171,7 +171,8 @@ def write_class_def(writer, class_desc):
     name = class_desc["name"]
     has_extras = "has_extras_header" in class_desc["flags"]
 
-    writer.write("class {name} {{\n".format(name=name))
+    inherit = ": public {parent}".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+    writer.write("class {name}{inherit} {{\n".format(name=name,inherit=inherit))
 
     # write nested classes
     writer.write("public:\n")
@@ -184,7 +185,8 @@ def write_class_def(writer, class_desc):
         writer.write(decl)
 
     # write needed impl field
-    writer.write("public: void* _impl;\n")
+    if "extends" not in class_desc:
+        writer.write("public: void* _impl;\n")
 
     for ctor in class_desc["constructors"]:
         decls = generate_ctor_decl(ctor, name)
@@ -217,11 +219,50 @@ def write_class_def(writer, class_desc):
 def write_ctor_impl(writer, ctor_desc, class_desc):
     parms = generate_parm_list(ctor_desc["parms"])
     name = class_desc["name"]
-    writer.write("{cname}::{name}({parms}) {{\n".format(cname=get_class_name(name), name=name, parms=parms))
+    full_name = get_class_name(name)
+    inherit = ": {parent}(NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+
+    writer.write("{cname}::{name}({parms}){inherit} {{\n".format(cname=full_name, name=name, parms=parms, inherit=inherit))
     args = generate_arg_list(ctor_desc["parms"])
     writer.write("_impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
     writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"_impl")))
     writer.write("initializeFromImpl(_impl);\n")
+    writer.write("}\n")
+
+def write_impl_ctor_impl(writer, class_desc):
+    name = class_desc["name"]
+    full_name = get_class_name(name)
+    inherit = ": {parent}(NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+
+    writer.write("{cname}::{name}(void * impl){inherit} {{\n".format(cname=full_name, name=name, inherit=inherit))
+    writer.write("if (impl != NULL) {\n")
+    writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")));
+    writer.write("initializeFromImpl(impl);\n")
+    writer.write("}\n")
+    writer.write("}\n")
+
+def write_impl_initializer(writer, class_desc):
+    name = class_desc["name"]
+    full_name = get_class_name(name)
+
+    writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=full_name))
+
+    if "extends" in class_desc:
+        writer.write("{parent}::initializeFromImpl(impl);\n".format(parent=get_class_name(class_desc["extends"])))
+    else:
+        writer.write("_impl = impl;\n")
+
+    for field in class_desc["fields"]:
+        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
+        writer.write(fmt.format(fname=field["name"], ftype=field["type"], impl_cast=to_impl_cast(name,"_impl")))
+        writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
+
+    for callback in class_desc["callbacks"]:
+        fmt = "{impl_cast}->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
+        registrar = callback_registrar_name(callback)
+        thunk = callback_thunk_name(class_desc, callback)
+        writer.write(fmt.format(impl_cast=to_impl_cast(name,"_impl"),registrar=registrar,thunk=thunk))
+
     writer.write("}\n")
 
 def write_arg_setup(writer, parm):
@@ -324,26 +365,12 @@ def write_class_impl(writer, class_desc):
         write_ctor_impl(writer, ctor, class_desc)
     writer.write("\n")
 
-    writer.write("{cname}::{name}(void * impl) {{\n".format(cname=full_name, name=name))
-    writer.write("if (impl != NULL) {\n")
-    writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")));
-    writer.write("initializeFromImpl(impl);\n")
-    writer.write("}\n")
-    writer.write("}\n\n")
+    write_impl_ctor_impl(writer, class_desc)
+    writer.write("\n")
 
-    # write class initializer (called from all constructors"
-    writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=full_name))
-    writer.write("_impl = impl;\n")
-    for field in class_desc["fields"]:
-        fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
-        writer.write(fmt.format(fname=field["name"], ftype=field["type"], impl_cast=to_impl_cast(name,"_impl")))
-        writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
-    for callback in class_desc["callbacks"]:
-        fmt = "{impl_cast}->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
-        registrar = callback_registrar_name(callback)
-        thunk = callback_thunk_name(class_desc, callback)
-        writer.write(fmt.format(impl_cast=to_impl_cast(name,"_impl"),registrar=registrar,thunk=thunk))
-    writer.write("}\n\n")
+    # write class initializer (called from all constructors)
+    write_impl_initializer(writer, class_desc)
+    writer.write("\n")
 
     # write destructor definition
     writer.write("{cname}::~{name}() {{}}\n".format(cname=full_name,name=name))
