@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+from functools import reduce
 import unittest
 
 copyright_header = """\
@@ -62,6 +63,8 @@ class_type_map = { "BytecodeBuilder": "BytecodeBuilder"
                  , "VirtualMachineState": "VirtualMachineState"
                  }
 
+inheritance_table = { "MethodBuilder": "IlBuilder" }
+
 def generate_include(path):
     return '#include "{}"\n'.format(path)
 
@@ -82,16 +85,24 @@ def as_client_type(t):
 def as_impl_type(t):
     return "{} *".format(get_impl_class_name(t)) if is_class(t) else builtin_type_map[t]
 
-def to_impl_cast(t, v):
-    assert is_class(t), "Can only generate cast to implementation type for class types, not {}".format(t)
-    return "reinterpret_cast<{t}>({v})".format(t=as_impl_type(t),v=v)
+def base_of(c):
+    return base_of(inheritance_table[c]) if c in inheritance_table else c
 
-def to_opaque_cast(v, from_t):
-    return "static_cast<void *>(v)".format(v=v)
+def to_impl_cast(c, v):
+    assert is_class(c), "Can only generate cast to implementation type for class types, not {}".format(t)
+    b = base_of(c)
+    v = v if b == c else "static_cast<{b}>({v})".format(b=as_impl_type(b), v=v)
+    return "static_cast<{t}>({v})".format(t=as_impl_type(c),v=v)
+
+def to_opaque_cast(v, from_c):
+    assert is_class(from_c), "Can only generate cast to implementation type for class types, not {}".format(t)
+    b = base_of(from_c)
+    v = v if b == from_c else "static_cast<{b}>({v})".format(b=as_impl_type(b), v=v)
+    return "static_cast<void *>({v})".format(v=v)
 
 def to_client_cast(t, v):
     assert is_class(t), "Can only generate cast to client type for class types, not {}".format(t)
-    return "reinterpret_cast<{t}>({v})".format(t=as_client_type(t),v=v)
+    return "static_cast<{t}>({v})".format(t=as_client_type(t),v=v)
 
 def grab_impl(v, t):
     return to_impl_cast(t, "{v} != NULL ? {v}->_impl : NULL".format(v=v)) if is_class(t) else v
@@ -224,9 +235,9 @@ def write_ctor_impl(writer, ctor_desc, class_desc):
 
     writer.write("{cname}::{name}({parms}){inherit} {{\n".format(cname=full_name, name=name, parms=parms, inherit=inherit))
     args = generate_arg_list(ctor_desc["parms"])
-    writer.write("_impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
-    writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"_impl")))
-    writer.write("initializeFromImpl(_impl);\n")
+    writer.write("auto * impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
+    writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")))
+    writer.write("initializeFromImpl({});\n".format(to_opaque_cast("impl",name)))
     writer.write("}\n")
 
 def write_impl_ctor_impl(writer, class_desc):
@@ -237,7 +248,10 @@ def write_impl_ctor_impl(writer, class_desc):
     writer.write("{cname}::{name}(void * impl){inherit} {{\n".format(cname=full_name, name=name, inherit=inherit))
     writer.write("if (impl != NULL) {\n")
     writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")));
-    writer.write("initializeFromImpl(impl);\n")
+
+    impl = "impl" if "extends" not in class_desc else to_opaque_cast("static_cast<{}>(impl)".format(as_impl_type(name)),name)
+    writer.write("initializeFromImpl({});\n".format(impl))
+
     writer.write("}\n")
     writer.write("}\n")
 
