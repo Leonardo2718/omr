@@ -232,11 +232,15 @@ def write_ctor_impl(writer, ctor_desc, class_desc):
     parms = generate_parm_list(ctor_desc["parms"])
     name = class_desc["name"]
     full_name = get_class_name(name)
-    inherit = ": {parent}(NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
 
     writer.write("{cname}::{name}({parms}){inherit} {{\n".format(cname=full_name, name=name, parms=parms, inherit=inherit))
+    for parm in ctor_desc["parms"]:
+        write_arg_setup(writer, parm)
     args = generate_arg_list(ctor_desc["parms"])
     writer.write("auto * impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
+    for parm in ctor_desc["parms"]:
+        write_arg_return(writer, parm)
     writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")))
     writer.write("initializeFromImpl({});\n".format(to_opaque_cast("impl",name)))
     writer.write("}\n")
@@ -244,7 +248,7 @@ def write_ctor_impl(writer, ctor_desc, class_desc):
 def write_impl_ctor_impl(writer, class_desc):
     name = class_desc["name"]
     full_name = get_class_name(name)
-    inherit = ": {parent}(NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
 
     writer.write("{cname}::{name}(void * impl){inherit} {{\n".format(cname=full_name, name=name, inherit=inherit))
     writer.write("if (impl != NULL) {\n")
