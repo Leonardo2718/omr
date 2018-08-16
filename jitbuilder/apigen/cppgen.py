@@ -37,6 +37,7 @@ builtin_type_map = { "none": "void"
                    , "int16": "int16_t"
                    , "int32": "int32_t"
                    , "int64": "int64_t"
+                   , "uint32": "uint32_t"
                    , "float": "float"
                    , "double": "double"
                    , "pointer": "void *"
@@ -410,6 +411,9 @@ def write_class_header(writer, class_desc, namespaces, class_names):
 
     writer.write("#ifndef {}_INCL\n".format(class_desc["name"]))
     writer.write("#define {}_INCL\n\n".format(class_desc["name"]))
+
+    if "extends" in class_desc:
+        writer.write(generate_include("{}.hpp".format(class_desc["extends"])))
 
     if has_extras:
         writer.write(generate_include('{}ExtrasOutsideClass.hpp'.format(class_desc["name"])))
