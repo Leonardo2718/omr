@@ -125,6 +125,15 @@
                 , "return": "TypeDictionary"
                 , "parms": []
                 },
+                { "name": "ConstInteger"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "IlValue"
+                , "parms": [
+                    {"name":"type","type":"IlType"},
+                    {"name":"value","type":"int64"}
+                    ]
+                },
                 { "name": "ConstAddress"
                 , "overloadsuffix": ""
                 , "flags": []
