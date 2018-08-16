@@ -341,7 +341,7 @@ main(int argc, char *argv[])
 
    printf("Step 5: output result buffer\n");
    FILE *out = (argc == 3) ? fopen(argv[2], "wb") : stdout;
-   fprintf(out, "P4\n%u %u\n", max_x, height);
+   fprintf(out, "P4\n%u %u\n", height, max_x);
    fwrite(buffer, size, 1, out);
 
    if (out != stdout)
