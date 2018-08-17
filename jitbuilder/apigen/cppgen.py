@@ -115,7 +115,8 @@ def is_array(parm_desc):
     return "attributes" in parm_desc and "array" in parm_desc["attributes"]
 
 def is_vararg(parm_desc):
-    return reduce(lambda l,r: l or r, ["can_be_vararg" in p["attributes"] for p in parm_desc["parms"] if "attributes" in p], False)
+    vararg_attrs = ["can_be_vararg" in p["attributes"] for p in parm_desc["parms"] if "attributes" in p]
+    return reduce(lambda l,r: l or r, vararg_attrs, False)
 
 def generate_parm(parm_desc):
     fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
