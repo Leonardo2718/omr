@@ -351,13 +351,23 @@ def write_vararg_service_impl(writer, desc, class_name):
         writer.write("return ret;\n")
     writer.write("}\n")
 
+def generate_callback_parm_list(parm_descs):
+    parms = [generate_parm(p) if p["type"] in builtin_type_map else "void * {}".format(p["name"]) for p in parm_descs]
+    return list_str_prepend("void * clientObj", ", ".join(parms))
+
+def generate_callback_arg_list(parm_descs):
+    cast_fmt = "static_cast<{t}>({n})"
+    args= [generate_arg(p) if p["type"] in builtin_type_map else cast_fmt.format(t=as_client_type(p["type"]),n=p["name"]) for p in parm_descs]
+    return ", ".join(args)
+
 def write_callback_thunk(writer, class_desc, callback_desc):
     rtype = as_client_type(callback_desc["return"])
     thunk = callback_thunk_name(class_desc, callback_desc)
-    parms = list_str_prepend("void * clientObj", generate_parm_list(callback_desc["parms"]))
     ctype = as_client_type(class_desc["name"])
     callback = callback_desc["name"]
-    args = generate_arg_list(callback_desc["parms"])
+    args = generate_callback_arg_list(callback_desc["parms"])
+    parms = generate_callback_parm_list(callback_desc["parms"])
+
     writer.write("{rtype} {thunk}({parms}) {{\n".format(rtype=rtype,thunk=thunk,parms=parms))
     writer.write("{ctype} client = {clientObj};\n".format(ctype=ctype,clientObj=to_client_cast(class_desc["name"],"clientObj")))
     writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
