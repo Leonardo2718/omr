@@ -381,6 +381,11 @@ def write_class_impl(writer, class_desc):
     for c in class_desc["types"]:
         write_class_impl(writer, c)
 
+    # write callback thunk definitions
+    for callback in class_desc["callbacks"]:
+        write_callback_thunk(writer, class_desc, callback)
+        writer.write("\n")
+
     # write constructor definitions
     for ctor in class_desc["constructors"]:
         write_ctor_impl(writer, ctor, class_desc)
@@ -402,9 +407,9 @@ def write_class_impl(writer, class_desc):
         write_service_impl(writer, s, get_class_name(class_desc["name"]))
         writer.write("\n")
 
-    # write callback thunk definitions
-    for callback in class_desc["callbacks"]:
-        write_callback_thunk(writer, class_desc, callback)
+    # write service definitions
+    for s in class_desc["callbacks"]:
+        write_service_impl(writer, s, get_class_name(class_desc["name"]))
         writer.write("\n")
 
 # main generator #####################################################
