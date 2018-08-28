@@ -1819,14 +1819,93 @@
             "short-name": "VMOA",
             "flags":[
                 ],
+            "extends":"VirtualMachineState",
             "types": [],
             "fields": [
                 ],
             "constructors": [
+                { "name": ""
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineOperandArray"
+                , "parms": [
+                    {"name":"mb","type":"MethodBuilder"},
+                    {"name":"numOfElements","type":"int32"},
+                    {"name":"elementType","type":"IlType"},
+                    {"name":"arrayBase","type":"VirtualMachineRegister"}
+                    ]
+                },
+                { "name": ""
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineOperandArray"
+                , "parms": [ {"name":"other","type":"VirtualMachineOperandArray"} ]
+                }
                 ],
             "callbacks": [
+                { "name": "Commit"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "Reload"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "MakeCopy"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineState"
+                , "parms": []
+                },
+                { "name": "MergeInto"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"vmState","type":"VirtualMachineOperandArray"},
+                    {"name":"b","type":"IlBuilder"}
+                    ]
+                }
                 ],
             "services": [
+                { "name": "Get"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "IlValue"
+                , "parms": [ {"name":"index","type":"int32"} ]
+                },
+                { "name": "Move"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"b","type":"IlBuilder"},
+                    {"name":"dstIndex","type":"int32"},
+                    {"name":"srcIndex","type":"int32"}
+                    ]
+                },
+                { "name": "Set"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"index","type":"int32"},
+                    {"name":"value","type":"IlValue"}
+                    ]
+                },
+                { "name": "UpdateArray"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"b","type":"IlBuilder"},
+                    {"name":"array","type":"IlValue"}
+                    ]
+                }
                 ]
         },
         {
@@ -1834,14 +1913,104 @@
             "short-name": "VMOS",
             "flags":[
                 ],
+            "extends": "VirtualMachineState",
             "types": [],
             "fields": [
                 ],
             "constructors": [
+                { "name": ""
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineOperandArray"
+                , "parms": [
+                    {"name":"mb","type":"MethodBuilder"},
+                    {"name":"numOfElements","type":"int32"},
+                    {"name":"elementType","type":"IlType"},
+                    {"name":"arrayBase","type":"VirtualMachineRegister"}
+                    ]
+                }
                 ],
             "callbacks": [
+                { "name": "Commit"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "Reload"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "MakeCopy"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineState"
+                , "parms": []
+                },
+                { "name": "MergeInto"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"vmState","type":"VirtualMachineOperandStack"},
+                    {"name":"b","type":"IlBuilder"}
+                    ]
+                }
                 ],
             "services": [
+                { "name": "Drop"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"b","type":"IlBuilder"},
+                    {"name":"depth","type":"int32"}
+                    ]
+                },
+                { "name": "Dup"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "Pick"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "IlValue"
+                , "parms": [ {"name":"depth","type":"int32"} ]
+                },
+                { "name": "Pop"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "IlValue"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "Push"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"b","type":"IlBuilder"},
+                    {"name":"value","type":"IlValue"}
+                    ]
+                },
+                { "name": "Top"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "IlValue"
+                , "parms": []
+                },
+                { "name": "UpdateStack"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [
+                    {"name":"b","type":"IlBuilder"},
+                    {"name":"array","type":"IlValue"}
+                    ]
+                }
                 ]
         },
         {
@@ -1885,15 +2054,6 @@
                 , "flags": []
                 , "return": "VirtualMachineState"
                 , "parms": []
-                },
-                { "name": "MergeInto"
-                , "overloadsuffix": ""
-                , "flags": []
-                , "return": "none"
-                , "parms": [
-                    {"name":"vmState","type":"VirtualMachineState"},
-                    {"name":"b","type":"IlBuilder"}
-                    ]
                 }
                 ],
             "services": [
@@ -1937,12 +2097,43 @@
             "short-name": "VMRIS",
             "flags":[
                 ],
+            "extends": "VirtualMachineRegister",
             "types": [],
             "fields": [
                 ],
             "constructors": [
+                { "name": ""
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineRegisterInStruct"
+                , "parms": [
+                    {"name":"b","type":"IlBuilder"},
+                    {"name":"structName","type":"constString"},
+                    {"name":"localNameHoldingStructAddress","type":"constString"},
+                    {"name":"fieldName","type":"constString"},
+                    {"name":"localName","type":"constString"}
+                    ]
+                }
                 ],
             "callbacks": [
+                { "name": "Commit"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "Reload"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "none"
+                , "parms": [ {"name":"b","type":"IlBuilder"} ]
+                },
+                { "name": "MakeCopy"
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineState"
+                , "parms": []
+                }
                 ],
             "services": [
                 ]
@@ -1956,6 +2147,12 @@
             "fields": [
                 ],
             "constructors": [
+                { "name": ""
+                , "overloadsuffix": ""
+                , "flags": []
+                , "return": "VirtualMachineState"
+                , "parms": []
+                }
                 ],
             "callbacks": [
                 { "name": "Commit"
