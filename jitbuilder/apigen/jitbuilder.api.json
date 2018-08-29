@@ -1548,21 +1548,6 @@
                 ]
         },
         {
-            "name":"IlReference",
-            "short-name": "IR",
-            "flags":[
-                ],
-            "types": [],
-            "fields": [
-                ],
-            "constructors": [
-                ],
-            "callbacks": [
-                ],
-            "services": [
-                ]
-        },
-        {
             "name":"IlType",
             "short-name": "IT",
             "flags":[
