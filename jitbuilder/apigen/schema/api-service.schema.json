@@ -31,7 +31,7 @@
         "flags": {
             "description": "flags for the API service",
             "type": "array",
-            "items": { "enum": [ "protected", "public", "static", "virtual", "callback", "create_impl", "is_overidden" ] }
+            "items": { "enum": [ "protected", "static", "virtual", "register-allocators", "impl-default" ] }
         }
     },
     "required": [ "name", "overloadsuffix", "return", "parms", "flags" ]
