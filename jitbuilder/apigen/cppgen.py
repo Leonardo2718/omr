@@ -137,6 +137,9 @@ def callback_thunk_name(class_desc, callback_desc):
 def list_str_prepend(pre, list_str):
     return pre + ("" if list_str == "" else ", " + list_str)
 
+def generate_allocator_name(class_desc):
+    return "allocate" + class_desc["name"]
+
 # header utilities ###################################################
 
 def generate_field_decl(field, with_visibility = True):
@@ -170,6 +173,9 @@ def generate_ctor_decl(ctor_desc, class_name):
 
 def generate_dtor_decl(class_desc):
     return "public: ~{cname}();\n".format(cname=class_desc["name"])
+
+def generate_allocator_decl(class_desc):
+    return "void * {alloc}(void * impl);\n".format(alloc=generate_allocator_name(class_desc))
 
 def write_class_def(writer, class_desc):
     name = class_desc["name"]
@@ -217,6 +223,7 @@ def write_class_def(writer, class_desc):
         writer.write(generate_include('{}ExtrasInsideClass.hpp'.format(class_desc["name"])))
 
     writer.write('};\n')
+    writer.write("\n{}\n".format(generate_allocator_decl(class_desc)))
 
 # source utilities ###################################################
 
@@ -373,6 +380,13 @@ def write_callback_thunk(writer, class_desc, callback_desc):
     writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
     writer.write("}\n")
 
+def write_allocator_impl(writer, class_desc):
+    allocator = generate_allocator_name(class_desc)
+    name = get_class_name(class_desc["name"])
+    writer.write("void * {alloc}(void * impl) {{\n".format(alloc=allocator))
+    writer.write("return new {name}(impl);\n".format(name=name))
+    writer.write("}\n")
+
 def write_class_impl(writer, class_desc):
     name = class_desc["name"]
     full_name = get_class_name(name)
@@ -411,6 +425,9 @@ def write_class_impl(writer, class_desc):
     for s in class_desc["callbacks"]:
         write_service_impl(writer, s, get_class_name(class_desc["name"]))
         writer.write("\n")
+
+    write_allocator_impl(writer, class_desc)
+    writer.write("\n")
 
 # main generator #####################################################
 
