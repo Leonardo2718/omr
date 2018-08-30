@@ -33,6 +33,7 @@
 namespace OMR { class MethodBuilder; }
 
 namespace TR { class Block; }
+namespace TR { class BytecodeBuilder; }
 namespace TR { class IlGeneratorMethodDetails; }
 namespace TR { class IlBuilder; }
 namespace TR { class ResolvedMethodSymbol; } 
@@ -46,11 +47,15 @@ namespace TR { class TypeDictionary; }
 template <class T> class List;
 template <class T> class ListAppender;
 
+extern "C"
+{
+typedef bool (*ClientBuildILCallback)(void *clientObject);
+}
+
 namespace OMR
 {
 
 typedef TR::ILOpCodes (*OpCodeMapper)(TR::DataType);
-
 
 class IlBuilder : public TR::IlInjector
    {
@@ -94,7 +99,10 @@ public:
     */
    class JBCase
       {
-      private:
+      public:
+         void * client() { return _client; }
+         void setClient(void * client) { _client = client; }
+
          /**
           * @brief Construct a new JBCase object.
           *
@@ -108,9 +116,11 @@ public:
          JBCase(int32_t v, TR::IlBuilder *b, int32_t f)
              : _value(v), _builder(b), _fallsThrough(f) {}
 
+      private:
          int32_t _value;          // value matched by the case
          TR::IlBuilder *_builder; // builder for the case body
          int32_t _fallsThrough;   // whether the case falls-through
+         void * _client;
 
          friend class OMR::IlBuilder;
       };
@@ -123,7 +133,10 @@ public:
     */
    class JBCondition
       {
-      private:
+      public:
+         void * client() { return _client; }
+         void setClient(void * client) { _client = client; }
+
          /**
           * @brief Construct a new JBCondition object.
           *
@@ -136,8 +149,10 @@ public:
          JBCondition(TR::IlBuilder *conditionBuilder, TR::IlValue *conditionValue)
             : _builder(conditionBuilder), _condition(conditionValue) {}
 
+      private:
          TR::IlBuilder *_builder; // builder used to generate the condition value
          TR::IlValue *_condition; // value for the condition
+         void * _client;
 
          friend class OMR::IlBuilder;
       };
@@ -146,6 +161,8 @@ public:
 
    IlBuilder(TR::MethodBuilder *methodBuilder, TR::TypeDictionary *types)
       : TR::IlInjector(types),
+      _client(0),
+      _clientCallbackBuildIL(0),
       _methodBuilder(methodBuilder),
       _sequence(0),
       _sequenceAppender(0),
@@ -193,6 +210,8 @@ public:
 
    TR::IlBuilder *createBuilderIfNeeded(TR::IlBuilder *builder);
    TR::IlBuilder *OrphanBuilder();
+   TR::BytecodeBuilder *OrphanBytecodeBuilder(int32_t bcIndex=0, char *name=NULL);
+
    bool TraceEnabled_log();
    void TraceIL_log(const char *s, ...);
 
@@ -509,8 +528,58 @@ public:
                      TR::IlBuilder **caseBuilder,
                      int32_t caseFallsThrough);
 
+   /**
+    * @brief associates this object with a particular client object
+    */
+   void setClient(void *client)
+      {
+      _client = client;
+      }
+
+   /**
+    * @brief returns the client object associated with this object, allocating it if necessary
+    */
+   void *client();
+
+   void setClientCallback_buildIL(void *callback)
+      {
+      _clientCallbackBuildIL = (ClientBuildILCallback)callback;
+      }
+
+   /**
+    * @brief associates this object with a particular client object
+    */
+   void setClient(void *client)
+      {
+      _client = client;
+      }
+
+   /**
+    * @brief returns the client object associated with this object
+    */
+   void *client()
+      {
+      return _client;
+      }
+
+   void setClientCallback_buildIL(void *callback)
+      {
+      _clientCallbackBuildIL = (ClientBuildILCallback)callback;
+      }
 
 protected:
+
+   /**
+    * @brief pointer to a client object that corresponds to this object
+    */
+   void                        * _client;
+ 
+   /**
+    * @brief pointer to buildIL callback function for this object
+    * usually NULL, but client objects can set this via setBuildILCallback() to be called
+    * when buildIL is called on this object
+    */
+   ClientBuildILCallback         _clientCallbackBuildIL;
 
    /**
     * @brief MethodBuilder parent for this IlBuilder object
@@ -562,7 +631,12 @@ protected:
     */
    bool                          _isHandler;
 
-   virtual bool buildIL() { return true; }
+   virtual bool buildIL()
+      {
+      if (_clientCallbackBuildIL)
+         return (*_clientCallbackBuildIL)(client());
+      return true;
+      }
 
    TR::SymbolReference *lookupSymbol(const char *name);
    void defineSymbol(const char *name, TR::SymbolReference *v);
@@ -627,6 +701,9 @@ protected:
    TR::IlValue *genOperationWithOverflowCHK(TR::ILOpCodes op, TR::Node *leftNode, TR::Node *rightNode, TR::IlBuilder **handler, TR::ILOpCodes overflow);
    virtual void setHandlerInfo(uint32_t catchType);
    TR::IlValue **processCallArgs(TR::Compilation *comp, int numArgs, va_list args);
+
+private:
+   static void * allocateClientObject(TR::IlBuilder *);
    };
 
 } // namespace OMR

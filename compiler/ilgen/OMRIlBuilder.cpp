@@ -88,6 +88,8 @@
 
 OMR::IlBuilder::IlBuilder(TR::IlBuilder *source)
    : TR::IlInjector(source),
+   _client(0),
+   _clientCallbackBuildIL(0),
    _methodBuilder(source->_methodBuilder),
    _sequence(0),
    _sequenceAppender(0),
@@ -483,6 +485,15 @@ OMR::IlBuilder::OrphanBuilder()
    return orphan;
    }
 
+TR::BytecodeBuilder *
+OMR::IlBuilder::OrphanBytecodeBuilder(int32_t bcIndex, char *name)
+   {
+   TR::BytecodeBuilder *orphan = new (comp()->trHeapMemory()) TR::BytecodeBuilder(_methodBuilder, bcIndex, name);
+   orphan->initialize(_details, _methodSymbol, _fe, _symRefTab);
+   orphan->setupForBuildIL();
+   return orphan;
+   }
+
 TR::Block *
 OMR::IlBuilder::emptyBlock()
    {
@@ -625,6 +636,7 @@ OMR::IlBuilder::Store(const char *varName, TR::IlValue *value)
 void
 OMR::IlBuilder::StoreOver(TR::IlValue *dest, TR::IlValue *value)
    {
+   TraceIL("IlBuilder[ %p ]::StoreOver %d gets %d\n", this, dest->getID(), value->getID());
    dest->storeOver(value, _currentBlock);
    }
 
@@ -1541,7 +1553,7 @@ OMR::IlBuilder::UnsignedShiftR(TR::IlValue *v, TR::IlValue *amount)
  * @param numTerms the number of conditional terms
  * @param terms array of JBCondition instances that evaluate a condition
  *
- * Example:
+ * Example (should be moved to client API):
  * TR::IlBuilder *cond1Builder = OrphanBuilder();
  * TR::IlValue *cond1 = cond1Builder->GreaterOrEqual(
  *                      cond1Builder->   Load("x"),
@@ -1632,7 +1644,7 @@ OMR::IlBuilder::IfAnd(TR::IlBuilder **allTrueBuilder, TR::IlBuilder **anyFalseBu
  * @param numTerms the number of conditional terms
  * @param terms array of JBCondition instances that evaluate a condition
  *
- * Example:
+ * Example (should be moved to client API):
  * TR::IlBuilder *cond1Builder = OrphanBuilder();
  * TR::IlValue *cond1 = cond1Builder->LessThan(
  *                      cond1Builder->   Load("x"),
@@ -2706,4 +2718,12 @@ OMR::IlBuilder::WhileDoLoop(const char *whileCondition, TR::IlBuilder **body, TR
    setComesBack(); // this goto is on one particular flow path, doesn't mean every path does a goto
 
    AppendBuilder(done);
+   }
+
+void *
+OMR::IlBuilder::client()
+   {
+   if (_client == NULL)
+      _client = allocateClientObject(static_cast<TR::IlBuilder *>(this));
+   return _client;
    }
