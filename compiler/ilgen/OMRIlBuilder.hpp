@@ -50,6 +50,8 @@ template <class T> class ListAppender;
 extern "C"
 {
 typedef bool (*ClientBuildILCallback)(void *clientObject);
+typedef void * (*ClientAllocator)(void *implObject);
+typedef void * (*ImplGetter)(void *client);
 }
 
 namespace OMR
@@ -100,8 +102,10 @@ public:
    class JBCase
       {
       public:
-         void * client() { return _client; }
+         void * client();
          void setClient(void * client) { _client = client; }
+         static void setClientAllocator(ClientAllocator allocator) { _clientAllocator = allocator; }
+         static void setGetImpl(ImplGetter getter) { _getImpl = getter; }
 
          /**
           * @brief Construct a new JBCase object.
@@ -121,6 +125,8 @@ public:
          TR::IlBuilder *_builder; // builder for the case body
          int32_t _fallsThrough;   // whether the case falls-through
          void * _client;
+         static ClientAllocator _clientAllocator;
+         static ImplGetter _getImpl;
 
          friend class OMR::IlBuilder;
       };
@@ -134,8 +140,10 @@ public:
    class JBCondition
       {
       public:
-         void * client() { return _client; }
+         void * client();
          void setClient(void * client) { _client = client; }
+         static void setClientAllocator(ClientAllocator allocator) { _clientAllocator = allocator; }
+         static void setGetImpl(ImplGetter getter) { _getImpl = getter; }
 
          /**
           * @brief Construct a new JBCondition object.
@@ -153,6 +161,8 @@ public:
          TR::IlBuilder *_builder; // builder used to generate the condition value
          TR::IlValue *_condition; // value for the condition
          void * _client;
+         static ClientAllocator _clientAllocator;
+         static ImplGetter _getImpl;
 
          friend class OMR::IlBuilder;
       };
@@ -567,6 +577,21 @@ public:
       _clientCallbackBuildIL = (ClientBuildILCallback)callback;
       }
 
+   static void setClientAllocator(ClientAllocator allocator)
+      {
+      _clientAllocator = allocator;
+      }
+
+   /**
+    * @brief Set the Get Impl function
+    *
+    * @param getter function pointer to the impl getter
+    */
+   static void setGetImpl(ImplGetter getter)
+      {
+      _getImpl = getter;
+      }
+
 protected:
 
    /**
@@ -580,6 +605,27 @@ protected:
     * when buildIL is called on this object
     */
    ClientBuildILCallback         _clientCallbackBuildIL;
+
+   /**
+    * @brief pointer to allocator function for this object.
+    *
+    * Clients must set this pointer using setClientAllocator().
+    * When this allocator is called, a pointer to the current
+    * class (this) will be passed as argument. The expected
+    * returned value is a pointer to the base type of the
+    * client object.
+    */
+   static ClientAllocator        _clientAllocator;
+
+   /**
+    * @brief pointer to impl getter function
+    *
+    * Clients must set this pointer using setImplGetter().
+    * When called with an instance of a client object,
+    * the function must return the corresponding
+    * implementation object
+    */
+   static ImplGetter             _getImpl;
 
    /**
     * @brief MethodBuilder parent for this IlBuilder object
@@ -701,9 +747,6 @@ protected:
    TR::IlValue *genOperationWithOverflowCHK(TR::ILOpCodes op, TR::Node *leftNode, TR::Node *rightNode, TR::IlBuilder **handler, TR::ILOpCodes overflow);
    virtual void setHandlerInfo(uint32_t catchType);
    TR::IlValue **processCallArgs(TR::Compilation *comp, int numArgs, va_list args);
-
-private:
-   static void * allocateClientObject(TR::IlBuilder *);
    };
 
 } // namespace OMR

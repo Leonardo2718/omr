@@ -2723,7 +2723,30 @@ OMR::IlBuilder::WhileDoLoop(const char *whileCondition, TR::IlBuilder **body, TR
 void *
 OMR::IlBuilder::client()
    {
-   if (_client == NULL)
-      _client = allocateClientObject(static_cast<TR::IlBuilder *>(this));
+   if (_client == NULL && _clientAllocator != NULL)
+      _client = _clientAllocator(static_cast<TR::IlBuilder *>(this));
    return _client;
    }
+
+void *
+OMR::IlBuilder::JBCase::client()
+   {
+   if (_client == NULL && _clientAllocator != NULL)
+      _client = _clientAllocator(static_cast<TR::IlBuilder::JBCase *>(this));
+   return _client;
+   }
+
+void *
+OMR::IlBuilder::JBCondition::client()
+   {
+   if (_client == NULL && _clientAllocator != NULL)
+      _client = _clientAllocator(static_cast<TR::IlBuilder::JBCondition *>(this));
+   return _client;
+   }
+
+ClientAllocator OMR::IlBuilder::_clientAllocator = NULL;
+ClientAllocator OMR::IlBuilder::_getImpl = NULL;
+ClientAllocator OMR::IlBuilder::JBCase::_clientAllocator = NULL;
+ClientAllocator OMR::IlBuilder::JBCase::_getImpl = NULL;
+ClientAllocator OMR::IlBuilder::JBCondition::_clientAllocator = NULL;
+ClientAllocator OMR::IlBuilder::JBCondition::_getImpl = NULL;
