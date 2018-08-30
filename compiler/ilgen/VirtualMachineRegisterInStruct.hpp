@@ -36,8 +36,15 @@ class VirtualMachineRegisterInStruct : public OMR::VirtualMachineRegisterInStruc
                                   const char * const fieldName,
                                   const char * const localName) :
       OMR::VirtualMachineRegisterInStruct(b, structName, localNameHoldingStructAddress, fieldName, localName)
-      {
-      }
+      { }
+
+   VirtualMachineRegisterInStruct(TR::TypeDictionary *dict,
+                                  const char * const structName,
+                                  const char * const localNameHoldingStructAddress,
+                                  const char * const fieldName,
+                                  const char * const localName) :
+      OMR::VirtualMachineRegisterInStruct(dict, structName, localNameHoldingStructAddress, fieldName, localName)
+      { }
    };
 
 }
