@@ -23,7 +23,7 @@ copyright_header = """\
  * [1] https://www.gnu.org/software/classpath/license.html
  * [2] http://openjdk.java.net/legal/assembly-exception.html
  *
- * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception
  *******************************************************************************/
 """
 
@@ -71,8 +71,8 @@ def get_impl_class_name(t):
     assert is_class(t), "Cannot get name for non-class type {}".format(t)
     return "TR::{}".format(class_type_map[t])
 
-def as_client_type(t):
-    return "{} *".format(get_class_name(t)) if is_class(t) else builtin_type_map[t]
+def as_client_type(t, namespace=""):
+    return "{ns}{t} *".format(ns=namespace,t=get_class_name(t)) if is_class(t) else builtin_type_map[t]
 
 def as_impl_type(t):
     return "{} *".format(get_impl_class_name(t)) if is_class(t) else builtin_type_map[t]
@@ -109,13 +109,14 @@ def is_vararg(parm_desc):
     vararg_attrs = ["can_be_vararg" in p["attributes"] for p in parm_desc["parms"] if "attributes" in p]
     return reduce(lambda l,r: l or r, vararg_attrs, False)
 
-def generate_parm(parm_desc):
+def generate_parm(parm_desc, namespace="", is_client=True):
     fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
-    t = as_client_type(parm_desc["type"])
+    t = parm_desc["type"]
+    t = as_client_type(t, namespace) if is_client else as_impl_type(t)
     return fmt.format(t=t,n=parm_desc["name"])
 
-def generate_parm_list(parms_desc):
-    return ", ".join([ generate_parm(p) for p in parms_desc ])
+def generate_parm_list(parms_desc, namespace="", is_client=True):
+    return ", ".join([ generate_parm(p, namespace=namespace, is_client=is_client) for p in parms_desc ])
 
 def generate_vararg_parm_list(parms_desc):
     return ", ".join(["..." if "attributes" in p and "can_be_vararg" in p["attributes"] else generate_parm(p) for p in parms_desc])
@@ -134,11 +135,17 @@ def callback_registrar_name(callback_desc):
 def callback_thunk_name(class_desc, callback_desc):
     return "{cname}Callback_{callback}".format(cname=class_desc["name"], callback=callback_desc["name"])
 
+def impl_getter_name(class_desc):
+    return "getImpl_{}".format(class_desc["name"])
+
 def list_str_prepend(pre, list_str):
     return pre + ("" if list_str == "" else ", " + list_str)
 
 def generate_allocator_name(class_desc):
-    return "allocate" + class_desc["name"]
+    return "allocate" + get_class_name(class_desc["name"]).replace("::", "")
+
+def generate_impl_service_name(service):
+    return "internal_" + service["name"]
 
 # header utilities ###################################################
 
@@ -149,19 +156,19 @@ def generate_field_decl(field, with_visibility = True):
     v = "public: " if with_visibility else ""
     return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
 
-def generate_service_decl(service, with_visibility = True, is_callback=False):
+def generate_class_service_decl(service,is_callback=False):
     """Generate a service from tis description"""
-    vis = "" if not with_visibility else "protected: " if "protected" in service["flags"] else "public: "
-    static = "static" if "static" in service["flags"] else ""
-    qual = ("virtual" if is_callback else " ") + static
+    vis = "protected: " if "protected" in service["flags"] else "public: "
+    static = "static " if "static" in service["flags"] else ""
+    qual = ("virtual " if is_callback else "") + static
     ret = as_client_type(service["return"])
     name = service["name"]
     parms = generate_parm_list(service["parms"])
 
-    decl = "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis, qualifier=qual, rtype=ret, name=name, parms=parms)
+    decl = "{visibility}{qualifier}{rtype} {name}({parms});\n".format(visibility=vis, qualifier=qual, rtype=ret, name=name, parms=parms)
     if is_vararg(service):
         parms = generate_vararg_parm_list(service["parms"])
-        decl = decl + "{visibility}{qualifier} {rtype} {name}({parms});\n".format(visibility=vis,qualifier=qual,rtype=ret,name=name,parms=parms)
+        decl = decl + "{visibility}{qualifier}{rtype} {name}({parms});\n".format(visibility=vis,qualifier=qual,rtype=ret,name=name,parms=parms)
 
     return decl
 
@@ -175,7 +182,12 @@ def generate_dtor_decl(class_desc):
     return "public: ~{cname}();\n".format(cname=class_desc["name"])
 
 def generate_allocator_decl(class_desc):
-    return "void * {alloc}(void * impl);\n".format(alloc=generate_allocator_name(class_desc))
+    return 'extern "C" void * {alloc}(void * impl);\n'.format(alloc=generate_allocator_name(class_desc))
+
+def write_allocator_decl(writer, class_desc):
+    for c in class_desc["types"]:
+        write_allocator_decl(writer, c)
+    writer.write(generate_allocator_decl(class_desc))
 
 def write_class_def(writer, class_desc):
     name = class_desc["name"]
@@ -212,18 +224,17 @@ def write_class_def(writer, class_desc):
     writer.write(dtor_decl)
 
     for callback in class_desc["callbacks"]:
-        decl = generate_service_decl(callback, is_callback=True)
+        decl = generate_class_service_decl(callback, is_callback=True)
         writer.write(decl)
 
     for service in class_desc["services"]:
-        decl = generate_service_decl(service)
+        decl = generate_class_service_decl(service)
         writer.write(decl)
 
     if has_extras:
         writer.write(generate_include('{}ExtrasInsideClass.hpp'.format(class_desc["name"])))
 
     writer.write('};\n')
-    writer.write("\n{}\n".format(generate_allocator_decl(class_desc)))
 
 # source utilities ###################################################
 
@@ -275,11 +286,16 @@ def write_impl_initializer(writer, class_desc):
         writer.write(fmt.format(fname=field["name"], ftype=field["type"], impl_cast=to_impl_cast(name,"_impl")))
         writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
 
+    impl_cast = to_impl_cast(name,"_impl")
     for callback in class_desc["callbacks"]:
         fmt = "{impl_cast}->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
         registrar = callback_registrar_name(callback)
         thunk = callback_thunk_name(class_desc, callback)
-        writer.write(fmt.format(impl_cast=to_impl_cast(name,"_impl"),registrar=registrar,thunk=thunk))
+        writer.write(fmt.format(impl_cast=impl_cast,registrar=registrar,thunk=thunk))
+
+    # write setting of the impl getter
+    impl_getter = impl_getter_name(class_desc)
+    writer.write("{impl_cast}->setGetImpl(&{impl_getter});\n".format(impl_cast=impl_cast,impl_getter=impl_getter))
 
     writer.write("}\n")
 
@@ -303,32 +319,35 @@ def write_arg_return(writer, parm):
         t = get_class_name(parm["type"])
         writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
-def write_service_impl(writer, desc, class_name):
+def write_class_service_impl(writer, desc, class_name):
     rtype = as_client_type(desc["return"])
     name = desc["name"]
     parms = generate_parm_list(desc["parms"])
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
 
-    for parm in desc["parms"]:
-        write_arg_setup(writer, parm)
-
-    args = generate_arg_list(desc["parms"])
-    impl_call = "{impl_cast}->{sname}({args})".format(impl_cast=to_impl_cast(class_name,"_impl"),sname=name,args=args)
-    if "none" == desc["return"]:
-        writer.write(impl_call + ";\n")
-        for parm in desc["parms"]:
-            write_arg_return(writer, parm)
-    elif is_class(desc["return"]):
-        writer.write("{rtype} implRet = {call};\n".format(rtype=as_impl_type(desc["return"]), call=impl_call))
-        for parm in desc["parms"]:
-            write_arg_return(writer, parm)
-        writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
-        writer.write("return clientObj;\n")
+    if "impl-default" in desc["flags"]:
+        writer.write("return 0;\n")
     else:
-        writer.write("auto ret = " + impl_call + ";\n")
         for parm in desc["parms"]:
-            write_arg_return(writer, parm)
-        writer.write("return ret;\n")
+            write_arg_setup(writer, parm)
+
+        args = generate_arg_list(desc["parms"])
+        impl_call = "{impl_cast}->{sname}({args})".format(impl_cast=to_impl_cast(class_name,"_impl"),sname=name,args=args)
+        if "none" == desc["return"]:
+            writer.write(impl_call + ";\n")
+            for parm in desc["parms"]:
+                write_arg_return(writer, parm)
+        elif is_class(desc["return"]):
+            writer.write("{rtype} implRet = {call};\n".format(rtype=as_impl_type(desc["return"]), call=impl_call))
+            for parm in desc["parms"]:
+                write_arg_return(writer, parm)
+            writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
+            writer.write("return clientObj;\n")
+        else:
+            writer.write("auto ret = " + impl_call + ";\n")
+            for parm in desc["parms"]:
+                write_arg_return(writer, parm)
+            writer.write("return ret;\n")
 
     writer.write("}\n")
 
@@ -375,15 +394,23 @@ def write_callback_thunk(writer, class_desc, callback_desc):
     args = generate_callback_arg_list(callback_desc["parms"])
     parms = generate_callback_parm_list(callback_desc["parms"])
 
-    writer.write("{rtype} {thunk}({parms}) {{\n".format(rtype=rtype,thunk=thunk,parms=parms))
+    writer.write('extern "C" {rtype} {thunk}({parms}) {{\n'.format(rtype=rtype,thunk=thunk,parms=parms))
     writer.write("{ctype} client = {clientObj};\n".format(ctype=ctype,clientObj=to_client_cast(class_desc["name"],"clientObj")))
     writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
+    writer.write("}\n")
+
+def write_impl_getter_impl(writer, class_desc):
+    getter = impl_getter_name(class_desc)
+    client_cast = to_client_cast(class_desc["name"], "client")
+    impl_cast = to_impl_cast(class_desc["name"],"{client_cast}->_impl".format(client_cast=client_cast))
+    writer.write('extern "C" void * {getter}(void * client) {{\n'.format(getter=getter))
+    writer.write("return {impl_cast};\n".format(impl_cast=impl_cast))
     writer.write("}\n")
 
 def write_allocator_impl(writer, class_desc):
     allocator = generate_allocator_name(class_desc)
     name = get_class_name(class_desc["name"])
-    writer.write("void * {alloc}(void * impl) {{\n".format(alloc=allocator))
+    writer.write('extern "C" void * {alloc}(void * impl) {{\n'.format(alloc=allocator))
     writer.write("return new {name}(impl);\n".format(name=name))
     writer.write("}\n")
 
@@ -399,6 +426,10 @@ def write_class_impl(writer, class_desc):
     for callback in class_desc["callbacks"]:
         write_callback_thunk(writer, class_desc, callback)
         writer.write("\n")
+
+    # write impl getter defintion
+    write_impl_getter_impl(writer, class_desc)
+    writer.write("\n")
 
     # write constructor definitions
     for ctor in class_desc["constructors"]:
@@ -418,16 +449,165 @@ def write_class_impl(writer, class_desc):
 
     # write service definitions
     for s in class_desc["services"]:
-        write_service_impl(writer, s, get_class_name(class_desc["name"]))
+        write_class_service_impl(writer, s, get_class_name(class_desc["name"]))
         writer.write("\n")
 
     # write service definitions
     for s in class_desc["callbacks"]:
-        write_service_impl(writer, s, get_class_name(class_desc["name"]))
+        write_class_service_impl(writer, s, get_class_name(class_desc["name"]))
         writer.write("\n")
 
     write_allocator_impl(writer, class_desc)
     writer.write("\n")
+
+# common file generator ##############################################
+
+register_allocators_name = "registerAllocators"
+
+def generate_allocator_registrations(class_desc):
+    registrations = []
+    for c in class_desc["types"]:
+        registrations += generate_allocator_registrations(c)
+    name = class_desc["name"]
+    registrations += "{iname}::setClientAllocator(OMR::JitBuilder::{alloc});\n".format(iname=get_impl_class_name(name),cname=get_class_name(name),alloc=generate_allocator_name(class_desc))
+    return registrations
+
+def generate_service_decl(service, namespace=""):
+    """Generate a service declaraion from its description"""
+    ret = as_client_type(service["return"])
+    name = service["name"]
+    parms = generate_parm_list(service["parms"], namespace)
+
+    decl = "{rtype} {name}({parms});\n".format(rtype=ret, name=name, parms=parms)
+    if is_vararg(service):
+        parms = generate_vararg_parm_list(service["parms"])
+        decl = decl + "{rtype} {name}({parms});\n".format(rtype=ret,name=name,parms=parms)
+
+    return decl
+
+def write_common_decl(writer, api_desc):
+    writer.write(copyright_header)
+    writer.write("\n")
+    namespaces = api_desc["namespace"]
+
+    writer.write("#ifndef {}_INCL\n".format(api_desc["project"]))
+    writer.write("#define {}_INCL\n\n".format(api_desc["project"]))
+
+    # write some needed includes and defines
+    writer.write("#include <stdint.h>\n\n")
+    writer.write("#define TOSTR(x) #x\n")
+    writer.write("#define LINETOSTR(x) TOSTR(x)\n\n")
+
+    # include headers for each defined class
+    for c in api_desc["classes"]:
+        writer.write(generate_include(c["name"] + ".hpp"))
+    writer.write("\n")
+
+    # write delcarations for all services
+    ns = "::".join(api_desc["namespace"]) + "::"
+    for service in api_desc["services"]:
+        decl = generate_service_decl(service, namespace=ns)
+        writer.write(decl)
+    writer.write("\n")
+
+    writer.write("using namespace {};\n\n".format("::".join(namespaces)))
+
+    writer.write("#endif // {}_INCL\n".format(api_desc["project"]))
+
+def generate_impl_service_import(service_desc):
+    rt = as_impl_type(service_desc["return"])
+    n = generate_impl_service_name(service_desc)
+    ps=generate_parm_list(service_desc["parms"], is_client=False)
+    return "extern {rt} {n}({ps});\n".format(rt=rt, n=n, ps=ps)
+
+def write_register_allocators(writer, api_desc):
+    writer.write("static void {}() {{\n".format(register_allocators_name))
+    for c in api_desc["classes"]:
+        writer.write("".join(generate_allocator_registrations(c)))
+    writer.write("}\n")
+
+def write_service_impl(writer, desc, namespace=""):
+    rtype = as_client_type(desc["return"])
+    name = desc["name"]
+    parms = generate_parm_list(desc["parms"], namespace)
+    writer.write("{rtype} {name}({parms}) {{\n".format(rtype=rtype, name=name, parms=parms))
+
+    if "register-allocators" in desc["flags"]:
+        writer.write("{}();\n".format(register_allocators_name))
+
+    for parm in desc["parms"]:
+        write_arg_setup(writer, parm)
+
+    args = generate_arg_list(desc["parms"])
+    impl_call = "{sname}({args})".format(sname=generate_impl_service_name(desc),args=args)
+    if "none" == desc["return"]:
+        writer.write(impl_call + ";\n")
+        for parm in desc["parms"]:
+            write_arg_return(writer, parm)
+    elif is_class(desc["return"]):
+        writer.write("{rtype} implRet = {call};\n".format(rtype=as_impl_type(desc["return"]), call=impl_call))
+        for parm in desc["parms"]:
+            write_arg_return(writer, parm)
+        writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc["return"]))
+        writer.write("return clientObj;\n")
+    else:
+        writer.write("auto ret = " + impl_call + ";\n")
+        for parm in desc["parms"]:
+            write_arg_return(writer, parm)
+        writer.write("return ret;\n")
+
+    writer.write("}\n")
+
+    if is_vararg(desc):
+        writer.write("\n")
+        write_vararg_service_impl(writer, desc, class_name)
+
+def write_common_impl(writer, api_desc):
+    writer.write(copyright_header)
+    writer.write("\n")
+
+    trheaders = [ "ilgen/BytecodeBuilder.hpp"
+                , "ilgen/IlBuilder.hpp"
+                , "ilgen/IlReference.hpp"
+                , "ilgen/IlType.hpp"
+                , "ilgen/IlValue.hpp"
+                , "ilgen/MethodBuilder.hpp"
+                , "ilgen/ThunkBuilder.hpp"
+                , "ilgen/TypeDictionary.hpp"
+                , "ilgen/VirtualMachineOperandArray.hpp"
+                , "ilgen/VirtualMachineOperandStack.hpp"
+                , "ilgen/VirtualMachineRegister.hpp"
+                , "ilgen/VirtualMachineRegisterInStruct.hpp"
+                , "ilgen/VirtualMachineState.hpp"
+                , "client/cpp/Macros.hpp"
+                , "release/cpp/include/BytecodeBuilder.hpp"
+                , "release/cpp/include/IlBuilder.hpp"
+                , "release/cpp/include/IlType.hpp"
+                , "release/cpp/include/IlValue.hpp"
+                , "release/cpp/include/MethodBuilder.hpp"
+                , "release/cpp/include/ThunkBuilder.hpp"
+                , "release/cpp/include/TypeDictionary.hpp"
+                , "release/cpp/include/VirtualMachineOperandArray.hpp"
+                , "release/cpp/include/VirtualMachineOperandStack.hpp"
+                , "release/cpp/include/VirtualMachineRegister.hpp"
+                , "release/cpp/include/VirtualMachineRegisterInStruct.hpp"
+                , "release/cpp/include/VirtualMachineState.hpp"
+                ]
+    for h in trheaders:
+        writer.write(generate_include(h))
+    writer.write("\n")
+
+    for service in api_desc["services"]:
+        writer.write(generate_impl_service_import(service))
+    writer.write("\n")
+
+    write_register_allocators(writer, api_desc)
+    writer.write("\n")
+
+    ns = "::".join(api_desc["namespace"]) + "::"
+    for service in api_desc["services"]:
+        write_service_impl(writer, service, ns)
+        writer.write("\n")
 
 # main generator #####################################################
 
@@ -460,6 +640,9 @@ def write_class_header(writer, class_desc, namespaces, class_names):
     write_class_def(writer, class_desc)
     writer.write("\n")
 
+    write_allocator_decl(writer, class_desc)
+    writer.write("\n")
+
     # close each openned namespace
     for n in reversed(namespaces):
         writer.write("}} // {}\n".format(n))
@@ -484,11 +667,9 @@ def write_class_source(writer, class_desc, namespaces, class_names):
                 , "ilgen/VirtualMachineRegister.hpp"
                 , "ilgen/VirtualMachineRegisterInStruct.hpp"
                 , "ilgen/VirtualMachineState.hpp"
-                , "client/cpp/Callbacks.hpp"
                 , "client/cpp/Macros.hpp"
                 , "release/cpp/include/BytecodeBuilder.hpp"
                 , "release/cpp/include/IlBuilder.hpp"
-                , "release/cpp/include/IlReference.hpp"
                 , "release/cpp/include/IlType.hpp"
                 , "release/cpp/include/IlValue.hpp"
                 , "release/cpp/include/MethodBuilder.hpp"
@@ -550,4 +731,8 @@ if __name__ == "__main__":
     inheritance_table = gen_inheritance_table(api["classes"])
     for class_desc in api["classes"]:
         write_class("./client", class_desc, namespaces, class_names)
+    with open("./client/JitBuilder.hpp", "w") as writer:
+        write_common_decl(writer, api)
+    with open("./client/JitBuilder.cpp", "w") as writer:
+        write_common_impl(writer, api)
 
