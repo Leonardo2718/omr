@@ -507,12 +507,12 @@ bool
 OperandArrayTestMethod::buildIL()
    {
    TypeDictionary *dict = typeDictionary();
-   IlType *pElementType = dict->PointerTo(dict->PointerTo(Word));
+   IlType *ppElementType = dict->PointerTo(dict->PointerTo(ARRAYVALUEILTYPE));
 
    Call("createArray", 0);
 
    IlValue *arrayBaseAddress = ConstAddress(&_realArray);
-   VirtualMachineRegister *arrayBase = new VirtualMachineRegister(this, "ARRAY", pElementType, sizeof(ARRAYVALUETYPE), arrayBaseAddress);
+   VirtualMachineRegister *arrayBase = new VirtualMachineRegister(this, "ARRAY", ppElementType, sizeof(ARRAYVALUETYPE), arrayBaseAddress);
    VirtualMachineOperandArray *array = new VirtualMachineOperandArray(this, _realArrayLength, _valueType, arrayBase);
 
    setVMState(array);
@@ -532,12 +532,12 @@ bool
 OperandArrayTestUsingFalseMethod::buildIL()
    {
    TypeDictionary *dict = typeDictionary();
-   IlType *pElementType = dict->PointerTo(dict->PointerTo(Word));
+   IlType *ppElementType = dict->PointerTo(dict->PointerTo(ARRAYVALUEILTYPE));
 
    Call("createArray", 0);
 
    IlValue *arrayBaseAddress = ConstAddress(&_realArray);
-   VirtualMachineRegister *arrayBase = new VirtualMachineRegister(this, "ARRAY", pElementType, sizeof(ARRAYVALUETYPE), arrayBaseAddress);
+   VirtualMachineRegister *arrayBase = new VirtualMachineRegister(this, "ARRAY", ppElementType, sizeof(ARRAYVALUETYPE), arrayBaseAddress);
    VirtualMachineOperandArray *array = new VirtualMachineOperandArray(this, _realArrayLength, _valueType, arrayBase);
 
    setVMState(array);
@@ -548,4 +548,4 @@ OperandArrayTestUsingFalseMethod::buildIL()
    testArray(bb, false);
 
    return true;
-   }
+}
