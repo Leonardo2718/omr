@@ -1797,28 +1797,78 @@
                 },
                 { "name": "DefineField"
                 , "overloadsuffix": ""
+                , "brief": "Define a member of a new structure type"
+                , "doc": [
+                    "This is an overloaded method. Since no offset for the new struct field is",
+                    "specified, it will be added to the end of the struct using alignment rules",
+                    "internally defined by JitBuilder. These are not guaranteed match the rules",
+                    "used by a C/C++ compiler as alignment rules are compiler specific. However,",
+                    "the alignment should be the same in most cases." ]
                 , "flags": []
-                , "return": "none"
+                , "return":
+                    { "type": "none"
+                    }
                 , "parms": [
-                    {"name":"structName","type":"constString"},
-                    {"name":"fieldName","type":"constString"},
-                    {"name":"type","type":"IlType"} ]
+                    { "name": "structName"
+                    , "type": "constString"
+                    , "doc": "the name of the struct type on which to define the field"
+                    },
+                    { "name": "fieldName"
+                    , "type": "constString"
+                    , "doc": "the name of the field"
+                    },
+                    { "name": "type"
+                    , "type": "IlType"
+                    , "doc": "the IlType instance representing the type of the field"
+                    } ]
                 },
                 { "name": "DefineField"
                 , "overloadsuffix": "AtOffset"
+                , "brief": "Define a member of a new structure type"
+                , "doc": [
+                    "Fields defined using this method must be defined in offset order.",
+                    "Specifically, the `offset` on any call to this method must be greater",
+                    "than or equal to the size of the new struct at the time of the call",
+                    "(`getSize() <= offset`). Failure to meet this condition will result",
+                    "in a runtime failure. This was done as an initial attempt to prevent",
+                    "struct fields from overlapping in memory." ]
                 , "flags": []
                 , "return": "none"
                 , "parms": [
-                    {"name":"structName","type":"constString"},
-                    {"name":"fieldName","type":"constString"},
-                    {"name":"type","type":"IlType"},
-                    {"name":"offset","type":"unsignedInteger"} ]
+                    { "name": "structName"
+                    , "type": "constString"
+                    , "doc": "the name of the struct type on which to define the field"
+                    },
+                    { "name": "fieldName"
+                    , "type": "constString"
+                    , "doc": "the name of the field"
+                    },
+                    { "name": "type"
+                    , "type": "IlType"
+                    , "doc": "the IlType instance representing the type of the field"
+                    },
+                    { "name": "offset"
+                    , "type": "unsignedInteger"
+                    , "doc": "the offset of the field within the structure (in bytes)"
+                    } ]
                 },
                 { "name": "DefineStruct"
                 , "overloadsuffix": ""
+                , "brief": "Begin definition of a new structure type"
+                , "doc": [
+                    "The name of the new type will have to be used when specifying",
+                    "fields of the type. This method must be invoked once before any",
+                    "calls to `DefineField()` and `CloseStruct()`." ]
                 , "flags": []
-                , "return": "IlType"
-                , "parms": [ {"name":"structName","type":"constString"} ]
+                , "return":
+                    { "type": "IlType"
+                    , "doc": "pointer to IlType instance of the new type being defined"
+                    }
+                , "parms": [
+                    { "name": "structName"
+                    , "type": "constString"
+                    , "doc": "the name of the new type"
+                    } ]
                 },
                 { "name": "DefineUnion"
                 , "overloadsuffix": ""
