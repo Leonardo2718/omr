@@ -41,6 +41,47 @@ def list_str_prepend(pre, list_str):
 
 # API description handling utilities
 
+class BasicAPIClass:
+    """Thin wrapper for a class API description"""
+
+    def __init__(self, description):
+        self.description = description
+
+    def name(self):
+        """Returns the (base) name of the API class."""
+        return self.description["name"]
+
+    def has_parent(self):
+        """Returns true if this class extends another class."""
+        return "extends" in self.description
+
+    def parent(self):
+        """
+        Returns the name of the parent class if it has one,
+        an empy string otherwise.
+        """
+        return self.description["extends"] if self.has_parent() else ""
+
+    def inner_classes(self):
+        """Returns a list of innter classes descriptions."""
+        return [BasicAPIClass(c) for c in self.description["types"]]
+
+    def services(self):
+        """Returns a list of descriptions of all contained services."""
+        return self.description["services"]
+
+    def constructors(self):
+        """Returns a list of the class constructor descriptions."""
+        return self.description["constructors"]
+
+    def callbacks(self):
+        """Returns a list of descriptions of all class callbacks."""
+        return self.description["callbacks"]
+
+    def fields(self):
+        """Returns a list of descriptions of all class fields."""
+        return self.description["fields"]
+
 class BasicAPIDescription:
     """A thin wrapper around a raw API description."""
 
@@ -57,7 +98,7 @@ class BasicAPIDescription:
 
     def classes(self):
         """Returns a list of all the top-level classes defined in the API."""
-        return self.description["classes"]
+        return [BasicAPIClass(c) for c in self.description["classes"]]
 
     def services(self):
         """Returns a list of all the top-level services defined in the API."""
@@ -116,12 +157,12 @@ class APIDescription(BasicAPIDescription):
 
     def get_class_names(self):
         """Retruns a list of the names of all the top-level classes defined in the API."""
-        return [c["name"] for c in self.classes()]
+        return [c.name() for c in self.classes()]
 
-    def get_class_by_name(self, c):
-        """Returns the description of a class from its name."""
-        assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
-        return self.description["classes"][c]
+    # def get_class_by_name(self, c):
+    #     """Returns the description of a class from its name."""
+    #     assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
+    #     return self.description["classes"][c]
 
     def is_class(self, c):
         """Returns true if the given string is the name of an API class."""
@@ -159,9 +200,9 @@ class APIDescription(BasicAPIDescription):
         """Generates a dictionary from class names raw class descriptions."""
         classes = {}
         for c in cs:
-            name = c["name"]
+            name = c.name()
             classes[name] = c
-            classes.update(self.__gen_class_table(c["types"]))
+            classes.update(self.__gen_class_table(c.inner_classes()))
         return classes
 
     @staticmethod
@@ -173,9 +214,9 @@ class APIDescription(BasicAPIDescription):
         """
         classes = {}
         for c in cs:
-            name = c["name"]
+            name = c.name()
             classes[name] = outer_classes
-            classes.update(APIDescription.__gen_containing_table(c["types"], outer_classes + [name]))
+            classes.update(APIDescription.__gen_containing_table(c.inner_classes(), outer_classes + [name]))
         return classes
 
     @staticmethod
@@ -186,8 +227,8 @@ class APIDescription(BasicAPIDescription):
         """
         table = {}
         for c in cs:
-            if "extends" in c: table[c["name"]] = c["extends"]
-            table.update(APIDescription.__gen_inheritance_table(c["types"]))
+            if c.has_parent(): table[c.name()] = c.parent()
+            table.update(APIDescription.__gen_inheritance_table(c.inner_classes()))
         return table
 
 # Implementation info helpers

@@ -207,18 +207,18 @@ def callback_thunk_name(class_desc, callback_desc):
     A thunk simply calls the corresponding client API service on
     the given client object.
     """
-    return "{cname}Callback_{callback}".format(cname=class_desc["name"], callback=callback_desc["name"])
+    return "{cname}Callback_{callback}".format(cname=class_desc.name(), callback=callback_desc["name"])
 
 def impl_getter_name(class_desc):
     """
     Produces the name of the callback that, given a client object,
     returns the corresponding JitBuilder implementation of the object.
     """
-    return "getImpl_{}".format(class_desc["name"])
+    return "getImpl_{}".format(class_desc.name())
 
 def get_allocator_name(class_desc):
     """Produces the name of an API client object allocator."""
-    return "allocate" + get_class_name(class_desc["name"]).replace("::", "")
+    return "allocate" + get_class_name(class_desc.name()).replace("::", "")
 
 # header utilities ###################################################
 
@@ -266,7 +266,7 @@ def generate_dtor_decl(class_desc):
     Produces the declaration of client API class destructor
     from the class's name.
     """
-    return "public: ~{cname}();\n".format(cname=class_desc["name"])
+    return "public: ~{cname}();\n".format(cname=class_desc.name())
 
 def generate_allocator_decl(class_desc):
     """Produces the declaration of a client API object allocator."""
@@ -277,34 +277,34 @@ def write_allocator_decl(writer, class_desc):
     Write the allocator declarations for a given client API
     class and its contained classes.
     """
-    for c in class_desc["types"]:
+    for c in class_desc.inner_classes():
         write_allocator_decl(writer, c)
     writer.write(generate_allocator_decl(class_desc))
 
 def write_class_def(writer, class_desc):
     """Write the definition of a client API class from its description."""
 
-    name = class_desc["name"]
-    has_extras = class_desc["name"] in classes_with_extras
+    name = class_desc.name()
+    has_extras = name in classes_with_extras
 
-    inherit = ": public {parent}".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+    inherit = ": public {parent}".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
     writer.write("class {name}{inherit} {{\n".format(name=name,inherit=inherit))
 
     # write nested classes
     writer.write("public:\n")
-    for c in class_desc["types"]:
+    for c in class_desc.inner_classes():
         write_class_def(writer, c)
 
     # write fields
-    for field in class_desc["fields"]:
+    for field in class_desc.fields():
         decl = generate_field_decl(field)
         writer.write(decl)
 
     # write needed impl field
-    if "extends" not in class_desc:
+    if not class_desc.has_parent():
         writer.write("public: void* _impl;\n")
 
-    for ctor in class_desc["constructors"]:
+    for ctor in class_desc.constructors():
         decls = generate_ctor_decl(ctor, name)
         writer.write(decls)
 
@@ -317,16 +317,16 @@ def write_class_def(writer, class_desc):
     dtor_decl = generate_dtor_decl(class_desc)
     writer.write(dtor_decl)
 
-    for callback in class_desc["callbacks"]:
+    for callback in class_desc.callbacks():
         decl = generate_class_service_decl(callback, is_callback=True)
         writer.write(decl)
 
-    for service in class_desc["services"]:
+    for service in class_desc.services():
         decl = generate_class_service_decl(service)
         writer.write(decl)
 
     if has_extras:
-        writer.write(generate_include('{}ExtrasInsideClass.hpp'.format(class_desc["name"])))
+        writer.write(generate_include('{}ExtrasInsideClass.hpp'.format(class_desc.name())))
 
     writer.write('};\n')
 
@@ -355,9 +355,9 @@ def write_ctor_impl(writer, ctor_desc, class_desc):
     ```
     """
     parms = generate_parm_list(ctor_desc["parms"])
-    name = class_desc["name"]
+    name = class_desc.name()
     full_name = get_class_name(name)
-    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
 
     writer.write("{cname}::{name}({parms}){inherit} {{\n".format(cname=full_name, name=name, parms=parms, inherit=inherit))
     for parm in ctor_desc["parms"]:
@@ -381,15 +381,15 @@ def write_impl_ctor_impl(writer, class_desc):
     calls the common initialization function. This is the constructor
     that constructors of derived client API classes should invoke.
     """
-    name = class_desc["name"]
+    name = class_desc.name()
     full_name = get_class_name(name)
-    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc["extends"])) if "extends" in class_desc else ""
+    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
 
     writer.write("{cname}::{name}(void * impl){inherit} {{\n".format(cname=full_name, name=name, inherit=inherit))
     writer.write("if (impl != NULL) {\n")
     writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")));
 
-    impl = "impl" if "extends" not in class_desc else to_opaque_cast("static_cast<{}>(impl)".format(get_impl_type(name)),name)
+    impl = "impl" if not class_desc.has_parent() else to_opaque_cast("static_cast<{}>(impl)".format(get_impl_type(name)),name)
     writer.write("initializeFromImpl({});\n".format(impl))
 
     writer.write("}\n")
@@ -406,23 +406,23 @@ def write_impl_initializer(writer, class_desc):
     implementation object. It is also used to set any callbacks
     to the client on the implementation object.
     """
-    name = class_desc["name"]
+    name = class_desc.name()
     full_name = get_class_name(name)
 
     writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=full_name))
 
-    if "extends" in class_desc:
-        writer.write("{parent}::initializeFromImpl(impl);\n".format(parent=get_class_name(class_desc["extends"])))
+    if class_desc.has_parent():
+        writer.write("{parent}::initializeFromImpl(impl);\n".format(parent=get_class_name(class_desc.parent())))
     else:
         writer.write("_impl = impl;\n")
 
-    for field in class_desc["fields"]:
+    for field in class_desc.fields():
         fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
         writer.write(fmt.format(fname=field["name"], ftype=field["type"], impl_cast=to_impl_cast(name,"_impl")))
         writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
 
     impl_cast = to_impl_cast(name,"_impl")
-    for callback in class_desc["callbacks"]:
+    for callback in class_desc.callbacks():
         fmt = "{impl_cast}->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
         registrar = callback_setter_name(callback)
         thunk = callback_thunk_name(class_desc, callback)
@@ -605,13 +605,13 @@ def write_callback_thunk(writer, class_desc, callback_desc):
     """
     rtype = get_client_type(callback_desc["return"])
     thunk = callback_thunk_name(class_desc, callback_desc)
-    ctype = get_client_type(class_desc["name"])
+    ctype = get_client_type(class_desc.name())
     callback = callback_desc["name"]
     args = generate_callback_arg_list(callback_desc["parms"])
     parms = generate_callback_parm_list(callback_desc["parms"])
 
     writer.write('extern "C" {rtype} {thunk}({parms}) {{\n'.format(rtype=rtype,thunk=thunk,parms=parms))
-    writer.write("{ctype} client = {clientObj};\n".format(ctype=ctype,clientObj=to_client_cast(class_desc["name"],"clientObj")))
+    writer.write("{ctype} client = {clientObj};\n".format(ctype=ctype,clientObj=to_client_cast(class_desc.name(),"clientObj")))
     writer.write("return client->{callback}({args});\n".format(callback=callback,args=args))
     writer.write("}\n")
 
@@ -626,8 +626,8 @@ def write_impl_getter_impl(writer, class_desc):
     an opaque pointer.
     """
     getter = impl_getter_name(class_desc)
-    client_cast = to_client_cast(class_desc["name"], "client")
-    impl_cast = to_impl_cast(class_desc["name"],"{client_cast}->_impl".format(client_cast=client_cast))
+    client_cast = to_client_cast(class_desc.name(), "client")
+    impl_cast = to_impl_cast(class_desc.name(),"{client_cast}->_impl".format(client_cast=client_cast))
     writer.write('extern "C" void * {getter}(void * client) {{\n'.format(getter=getter))
     writer.write("return {impl_cast};\n".format(impl_cast=impl_cast))
     writer.write("}\n")
@@ -640,7 +640,7 @@ def write_allocator_impl(writer, class_desc):
     to allocated client objects and returns it as an opaque pointer.
     """
     allocator = get_allocator_name(class_desc)
-    name = get_class_name(class_desc["name"])
+    name = get_class_name(class_desc.name())
     writer.write('extern "C" void * {alloc}(void * impl) {{\n'.format(alloc=allocator))
     writer.write("return new {name}(impl);\n".format(name=name))
     writer.write("}\n")
@@ -648,15 +648,15 @@ def write_allocator_impl(writer, class_desc):
 def write_class_impl(writer, class_desc):
     """Write the implementation of a client API class."""
 
-    name = class_desc["name"]
+    name = class_desc.name()
     full_name = get_class_name(name)
 
     # write source for iner classes first
-    for c in class_desc["types"]:
+    for c in class_desc.inner_classes():
         write_class_impl(writer, c)
 
     # write callback thunk definitions
-    for callback in class_desc["callbacks"]:
+    for callback in class_desc.callbacks():
         write_callback_thunk(writer, class_desc, callback)
         writer.write("\n")
 
@@ -665,7 +665,7 @@ def write_class_impl(writer, class_desc):
     writer.write("\n")
 
     # write constructor definitions
-    for ctor in class_desc["constructors"]:
+    for ctor in class_desc.constructors():
         write_ctor_impl(writer, ctor, class_desc)
     writer.write("\n")
 
@@ -681,13 +681,13 @@ def write_class_impl(writer, class_desc):
     writer.write("\n")
 
     # write service definitions
-    for s in class_desc["services"]:
-        write_class_service_impl(writer, s, get_class_name(class_desc["name"]))
+    for s in class_desc.services():
+        write_class_service_impl(writer, s, get_class_name(class_desc.name()))
         writer.write("\n")
 
     # write service definitions
-    for s in class_desc["callbacks"]:
-        write_class_service_impl(writer, s, get_class_name(class_desc["name"]))
+    for s in class_desc.callbacks():
+        write_class_service_impl(writer, s, get_class_name(class_desc.name()))
         writer.write("\n")
 
     write_allocator_impl(writer, class_desc)
@@ -707,9 +707,9 @@ def generate_allocator_setting(class_desc):
     by invoking these allocators as callbacks.
     """
     registrations = []
-    for c in class_desc["types"]:
+    for c in class_desc.inner_classes():
         registrations += generate_allocator_setting(c)
-    name = class_desc["name"]
+    name = class_desc.name()
     registrations += "{iname}::setClientAllocator(OMR::JitBuilder::{alloc});\n".format(iname=get_impl_class_name(name),cname=get_class_name(name),alloc=get_allocator_name(class_desc))
     return registrations
 
@@ -851,19 +851,19 @@ def write_common_impl(writer, api_desc):
 def write_class_header(writer, class_desc, namespaces, class_names):
     """Writes the header for a client API class from the class description."""
 
-    has_extras = class_desc["name"] in classes_with_extras
+    has_extras = class_desc.name() in classes_with_extras
 
     writer.write(copyright_header)
     writer.write("\n")
 
-    writer.write("#ifndef {}_INCL\n".format(class_desc["name"]))
-    writer.write("#define {}_INCL\n\n".format(class_desc["name"]))
+    writer.write("#ifndef {}_INCL\n".format(class_desc.name()))
+    writer.write("#define {}_INCL\n\n".format(class_desc.name()))
 
-    if "extends" in class_desc:
-        writer.write(generate_include("{}.hpp".format(class_desc["extends"])))
+    if class_desc.has_parent():
+        writer.write(generate_include("{}.hpp".format(class_desc.parent())))
 
     if has_extras:
-        writer.write(generate_include('{}ExtrasOutsideClass.hpp'.format(class_desc["name"])))
+        writer.write(generate_include('{}ExtrasOutsideClass.hpp'.format(class_desc.name())))
     writer.write("\n")
 
     # open each nested namespace
@@ -887,7 +887,7 @@ def write_class_header(writer, class_desc, namespaces, class_names):
         writer.write("}} // {}\n".format(n))
     writer.write("\n")
 
-    writer.write("#endif // {}_INCL\n".format(class_desc["name"]))
+    writer.write("#endif // {}_INCL\n".format(class_desc.name()))
 
 def write_class_source(writer, class_desc, namespaces, class_names):
     """
@@ -916,7 +916,7 @@ def write_class_source(writer, class_desc, namespaces, class_names):
 def write_class(header_dir, source_dir, class_desc, namespaces, class_names):
     """Generates and writes a client API class from its description."""
 
-    cname = class_desc["name"]
+    cname = class_desc.name()
     header_path = os.path.join(header_dir, cname + ".hpp")
     source_path = os.path.join(source_dir, cname + ".cpp")
     with open(header_path, "w") as writer:
@@ -937,9 +937,9 @@ def gen_api_impl_includes(classes_desc, api_headers_dir):
 
     The generated list should be assigned to `impl_include_files`.
     """
-    files = [os.path.join("ilgen", c["name"] + ".hpp") for c in classes_desc]
+    files = [os.path.join("ilgen", c.name() + ".hpp") for c in classes_desc]
     files += [os.path.join(api_headers_dir, "Macros.hpp")]
-    files += [os.path.join(api_headers_dir, c["name"] + ".hpp") for c in classes_desc]
+    files += [os.path.join(api_headers_dir, c.name() + ".hpp") for c in classes_desc]
     return files
 
 if __name__ == "__main__":
