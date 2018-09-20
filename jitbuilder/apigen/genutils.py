@@ -122,6 +122,55 @@ class APIService:
         vararg_attrs = ["can_be_vararg" in p["attributes"] for p in self.parameters() if "attributes" in p]
         return reduce(lambda l,r: l or r, vararg_attrs, False)
 
+class APICallback(APIService):
+    """
+    A wrapper for a callback API description.
+
+    Callbacks are currently described the same way as services,
+    so all the functionality can be simply shared.
+    """
+
+    def __init__(self, description, api):
+        APIService.__init__(self, description, api)
+
+class APIConstructor(APIService):
+    """
+    A wrapper for a constructor API description.
+
+    Class constructors are currently described the same as services,
+    so most of the functionality can be simply shared. However, because
+    constructors do not have names or return types, which just correspond
+    to the owning class, these properties are appropriately override.
+    To accommodate these requirements, the description of the owning
+    class must also be provided.
+    """
+
+    def __init__(self, description, owner, api):
+        """
+        Constructs an instance of APIConstructor, wrapping a given
+        raw description object.
+
+        The `owner` is the instance of APIClass that represents
+        the class owning the constructor.
+        """
+        APIService.__init__(self, description, api)
+        self.owner = owner
+
+    def name(self):
+        """The name of a constructor is just the name of the owning class."""
+        return self.owner.name()
+
+    def return_type(self):
+        """
+        Constructors do not have a "return type" so this method
+        raises a NotImplementedError exception.
+        """
+        raise NotImplementedError()
+
+    def owning_class(self):
+        """Returns the description of the API class this constructor belongs to."""
+        return self.owner
+
 class APIClass:
     """A wrapper for a class API description."""
 
@@ -156,11 +205,11 @@ class APIClass:
 
     def constructors(self):
         """Returns a list of the class constructor descriptions."""
-        return self.description["constructors"]
+        return [APIConstructor(c, self, self.api) for c in self.description["constructors"]]
 
     def callbacks(self):
         """Returns a list of descriptions of all class callbacks."""
-        return [APIService(s, self.api) for s in self.description["callbacks"]]
+        return [APICallback(s, self.api) for s in self.description["callbacks"]]
 
     def fields(self):
         """Returns a list of descriptions of all class fields."""
