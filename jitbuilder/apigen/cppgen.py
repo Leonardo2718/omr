@@ -227,8 +227,8 @@ def generate_field_decl(field, with_visibility = True):
     Produces the declaration of a client API field from
     its description, specifying its visibility as required.
     """
-    t = get_client_type(field["type"])
-    n = field["name"]
+    t = get_client_type(field.type())
+    n = field.name()
     v = "public: " if with_visibility else ""
     return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
 
@@ -418,8 +418,8 @@ def write_impl_initializer(writer, class_desc):
 
     for field in class_desc.fields():
         fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
-        writer.write(fmt.format(fname=field["name"], ftype=field["type"], impl_cast=to_impl_cast(name,"_impl")))
-        writer.write("{fname} = clientObj_{fname};\n".format(fname=field["name"]))
+        writer.write(fmt.format(fname=field.name(), ftype=field.type(), impl_cast=to_impl_cast(name,"_impl")))
+        writer.write("{fname} = clientObj_{fname};\n".format(fname=field.name()))
 
     impl_cast = to_impl_cast(name,"_impl")
     for callback in class_desc.callbacks():
