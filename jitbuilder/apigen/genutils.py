@@ -41,11 +41,14 @@ def list_str_prepend(pre, list_str):
 
 # API description handling utilities
 
-class BasicAPIClass:
-    """Thin wrapper for a class API description"""
+class APIClass:
+    """A wrapper for a class API description."""
 
-    def __init__(self, description):
+    def __init__(self, description, api):
         self.description = description
+        self.api = api
+
+    ## Basic interface
 
     def name(self):
         """Returns the (base) name of the API class."""
@@ -64,7 +67,7 @@ class BasicAPIClass:
 
     def inner_classes(self):
         """Returns a list of innter classes descriptions."""
-        return [BasicAPIClass(c) for c in self.description["types"]]
+        return [APIClass(c, self.api) for c in self.description["types"]]
 
     def services(self):
         """Returns a list of descriptions of all contained services."""
@@ -82,11 +85,73 @@ class BasicAPIClass:
         """Returns a list of descriptions of all class fields."""
         return self.description["fields"]
 
-class BasicAPIDescription:
-    """A thin wrapper around a raw API description."""
+    ## Extended interface
+
+    def containing_classes(self):
+        """Returns a list of classes containing the current class, from inner- to outer-most."""
+        return self.api.containing_classes_of(self.name())
+
+    def base(self):
+        """
+        Returns the base class of the current class. If the class does not
+        extend another class, the current class is returned.
+        """
+        return self.api.get_class_by_name(self.api.base_of(self.name())) if self.has_parent() else self
+
+class APIDescription:
+    """A class abstract the details of how an API description is stored"""
+
+    @staticmethod
+    def load_json_string(desc):
+        """Load an API description from a JSON string."""
+        return APIDescription(json.loads(desc))
+
+    @staticmethod
+    def load_json_file(desc):
+        """Load an API description from a JSON file."""
+        return APIDescription(json.load(desc))
 
     def __init__(self, description):
         self.description = description
+
+        # table mapping class names to class descriptions
+        self.class_table = {}
+        self.__init_class_table(self.class_table, self.classes())
+
+        # table of classes and their contained classes
+        self.containing_table = {}
+        self.__init_containing_table(self.containing_table, self.classes())
+
+        # table of base-classes
+        self.inheritance_table = {}
+        self.__init_inheritance_table(self.inheritance_table, self.classes())
+
+    def __init_class_table(self, table, cs):
+        """Generates a dictionary from class names class descriptions."""
+        for c in cs:
+            table[c.name()] = c
+            self.__init_class_table(table, c.inner_classes())
+
+    def __init_containing_table(self, table, cs, outer_classes=[]):
+        """
+        Generates a dictionary from class names to complete class names
+        that include the names of containing classes from a list of
+        client API class descriptions.
+        """
+        for c in cs:
+            self.__init_containing_table(table, c.inner_classes(), outer_classes + [c.name()])
+            table[c.name()] = outer_classes
+
+    def __init_inheritance_table(self, table, cs):
+        """
+        Generates a dictionary from class names to base-class names
+        from a list of API class descriptions.
+        """
+        for c in cs:
+            self.__init_inheritance_table(table, c.inner_classes())
+            if c.has_parent(): table[c.name()] = c.parent()
+
+    ## Basic interface
 
     def project(self):
         """Returns the name of the project the API is for."""
@@ -98,7 +163,7 @@ class BasicAPIDescription:
 
     def classes(self):
         """Returns a list of all the top-level classes defined in the API."""
-        return [BasicAPIClass(c) for c in self.description["classes"]]
+        return [APIClass(c, self) for c in self.description["classes"]]
 
     def services(self):
         """Returns a list of all the top-level services defined in the API."""
@@ -127,42 +192,16 @@ class BasicAPIDescription:
         vararg_attrs = ["can_be_vararg" in p["attributes"] for p in service_desc["parms"] if "attributes" in p]
         return reduce(lambda l,r: l or r, vararg_attrs, False)
 
-class APIDescription(BasicAPIDescription):
-    """A class abstract the details of how an API description is stored"""
-
-    @staticmethod
-    def load_json_string(desc):
-        """Load an API description from a JSON string."""
-        return APIDescription(json.loads(desc))
-
-    @staticmethod
-    def load_json_file(desc):
-        """Load an API description from a JSON file."""
-        return APIDescription(json.load(desc))
-
-    def __init__(self, description):
-        BasicAPIDescription.__init__(self, description)
-
-        # table mapping class names to raw class descriptions
-        self.class_table = self.__gen_class_table(self.classes())
-
-        # table of classes and their contained classes
-        #
-        # each class has a key in the table and the corresponding value
-        # is a list of its outer/containing classes, from outmost to innermost
-        self.containing_table = self.__gen_containing_table(self.classes())
-
-        # table of base-classes
-        self.inheritance_table = self.__gen_inheritance_table(self.classes())
+    ## Extended interface
 
     def get_class_names(self):
         """Retruns a list of the names of all the top-level classes defined in the API."""
         return [c.name() for c in self.classes()]
 
-    # def get_class_by_name(self, c):
-    #     """Returns the description of a class from its name."""
-    #     assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
-    #     return self.description["classes"][c]
+    def get_class_by_name(self, c):
+        """Returns the description of a class from its name."""
+        assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
+        return self.description["classes"][c]
 
     def is_class(self, c):
         """Returns true if the given string is the name of an API class."""
@@ -195,41 +234,6 @@ class APIDescription(BasicAPIDescription):
         """
         assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
         return self.base_of(self.inheritance_table[c]) if c in self.inheritance_table else c
-
-    def __gen_class_table(self, cs):
-        """Generates a dictionary from class names raw class descriptions."""
-        classes = {}
-        for c in cs:
-            name = c.name()
-            classes[name] = c
-            classes.update(self.__gen_class_table(c.inner_classes()))
-        return classes
-
-    @staticmethod
-    def __gen_containing_table(cs, outer_classes=[]):
-        """
-        Generates a dictionary from class names to complete class names
-        that include the names of containing classes from a list of
-        client API class descriptions.
-        """
-        classes = {}
-        for c in cs:
-            name = c.name()
-            classes[name] = outer_classes
-            classes.update(APIDescription.__gen_containing_table(c.inner_classes(), outer_classes + [name]))
-        return classes
-
-    @staticmethod
-    def __gen_inheritance_table(cs):
-        """
-        Generates a dictionary from class names to base-class names
-        from a list of API class descriptions.
-        """
-        table = {}
-        for c in cs:
-            if c.has_parent(): table[c.name()] = c.parent()
-            table.update(APIDescription.__gen_inheritance_table(c.inner_classes()))
-        return table
 
 # Implementation info helpers
 #
