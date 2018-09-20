@@ -41,6 +41,23 @@ def list_str_prepend(pre, list_str):
 
 # API description handling utilities
 
+class APIField:
+    """A wrapper for a field API description."""
+
+    def __init__(self, description, api):
+        self.description = description
+        self.api = api
+
+    ## Basic interface
+
+    def name(self):
+        """Returns the name of the field."""
+        return self.description["name"]
+
+    def type(self):
+        """returns the type of the field."""
+        return self.description["type"]
+
 class APIClass:
     """A wrapper for a class API description."""
 
@@ -83,7 +100,7 @@ class APIClass:
 
     def fields(self):
         """Returns a list of descriptions of all class fields."""
-        return self.description["fields"]
+        return [APIField(f, self.api) for f in self.description["fields"]]
 
     ## Extended interface
 
