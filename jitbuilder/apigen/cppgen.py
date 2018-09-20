@@ -87,15 +87,7 @@ builtin_type_map = { "none": "void"
 # Classes that have extra APIs, not covered in the master description
 classes_with_extras = [ "TypeDictionary" ]
 
-# Mapping of class base names to fully expanded names.
-#
-# This map should be assigned the result of a call to `gen_call_map()`.
-class_type_map = {}
-
-# Table of base-classes.
-#
-# This table should be assigned the result of a call to `gen_inheritance_table()`.
-inheritance_table = {}
+api_description = None
 
 # List of files to be included in the client API implementation.
 #
@@ -106,48 +98,35 @@ def generate_include(path):
     """Returns an #include directive for a given path."""
     return '#include "{}"\n'.format(path)
 
-def is_class(t):
-    """Returns true if the given string is the name of an API class."""
-    return t in class_type_map
-
 def get_class_name(t):
     """Returns the name of a given class in the client API implementation."""
-    assert is_class(t), "Cannot get name for non-class type {}".format(t)
-    return class_type_map[t]
+    return "::".join(api_description.containing_classes_of(t) + [t])
 
 def get_impl_class_name(t):
     """Returns the name of a given class in the JitBuilder implementation."""
-    assert is_class(t), "Cannot get name for non-class type {}".format(t)
-    return "TR::{}".format(class_type_map[t])
+    return "TR::{}".format(get_class_name(t))
 
 def get_client_type(t, namespace=""):
     """
     Returns the C++ type to be used in the client API implementation
     for a given type name, prefixing with a given namespace if needed.
     """
-    return "{ns}{t} *".format(ns=namespace,t=get_class_name(t)) if is_class(t) else builtin_type_map[t]
+    return "{ns}{t} *".format(ns=namespace,t=get_class_name(t)) if api_description.is_class(t) else builtin_type_map[t]
 
 def get_impl_type(t):
     """
     Returns the C++ type to be used in the JitBuilder implementation
     for a given type name, prefixing with a given namespace if needed.
     """
-    return "{} *".format(get_impl_class_name(t)) if is_class(t) else builtin_type_map[t]
-
-def base_of(c):
-    """
-    Returns the name of the base-class of a given class name `c`.
-    If `c` does not extend any class, then `c` itself is returned.
-    """
-    return base_of(inheritance_table[c]) if c in inheritance_table else c
+    return "{} *".format(get_impl_class_name(t)) if api_description.is_class(t) else builtin_type_map[t]
 
 def to_impl_cast(c, v):
     """
     Constructs a cast of the value `v` to the type of the
     implementation class `c`.
     """
-    assert is_class(c), "Can only generate cast to implementation type for class types, not {}".format(t)
-    b = base_of(c)
+    assert api_description.is_class(c), "Can only generate cast to implementation type for class types, not {}".format(c)
+    b = api_description.base_of(c)
     v = v if b == c else "static_cast<{b}>({v})".format(b=get_impl_type(b), v=v)
     return "static_cast<{t}>({v})".format(t=get_impl_type(c),v=v)
 
@@ -156,8 +135,8 @@ def to_opaque_cast(v, from_c):
     Constructs a cast of the value `v` from the type of the
     implementation class `from_c` to an opaque pointer type.
     """
-    assert is_class(from_c), "Can only generate cast from implementation type for class types, not {}".format(t)
-    b = base_of(from_c)
+    assert api_description.is_class(from_c), "Can only generate cast from implementation type for class types, not {}".format(from_c)
+    b = api_description.base_of(from_c)
     v = v if b == from_c else "static_cast<{b}>({v})".format(b=get_impl_type(b), v=v)
     return "static_cast<void *>({v})".format(v=v)
 
@@ -166,7 +145,7 @@ def to_client_cast(c, v):
     Constructs a cast of the value `v` to the type of the
     client API class `c`.
     """
-    assert is_class(c), "Can only generate cast to client type for class types, not {}".format(c)
+    assert api_description.is_class(c), "Can only generate cast to client type for class types, not {}".format(c)
     return "static_cast<{t}>({v})".format(t=get_client_type(c),v=v)
 
 def grab_impl(v, t):
@@ -174,14 +153,14 @@ def grab_impl(v, t):
     Constructs an expression that grabs the implementation object
     from a client API object `v` and with type name `t`.
     """
-    return to_impl_cast(t, "{v} != NULL ? {v}->_impl : NULL".format(v=v)) if is_class(t) else v
+    return to_impl_cast(t, "{v} != NULL ? {v}->_impl : NULL".format(v=v)) if api_description.is_class(t) else v
 
 def generate_parm(parm_desc, namespace="", is_client=True):
     """
     Produces a parameter declaration from a given parameter description.
     The parameter declaration is usable in a function declaration.
     """
-    fmt = "{t}* {n}" if is_in_out(parm_desc) or is_array(parm_desc) else "{t} {n}"
+    fmt = "{t}* {n}" if APIDescription.is_in_out(parm_desc) or APIDescription.is_array(parm_desc) else "{t} {n}"
     t = parm_desc["type"]
     t = get_client_type(t, namespace) if is_client else get_impl_type(t)
     return fmt.format(t=t,n=parm_desc["name"])
@@ -209,7 +188,7 @@ def generate_arg(parm_desc):
     """
     n = parm_desc["name"]
     t = parm_desc["type"]
-    return (n + "Arg") if is_in_out(parm_desc) or is_array(parm_desc) else grab_impl(n,t)
+    return (n + "Arg") if APIDescription.is_in_out(parm_desc) or APIDescription.is_array(parm_desc) else grab_impl(n,t)
 
 def generate_arg_list(parms_desc):
     """
@@ -266,7 +245,7 @@ def generate_class_service_decl(service,is_callback=False):
     parms = generate_parm_list(service["parms"])
 
     decl = "{visibility}{qualifier}{rtype} {name}({parms});\n".format(visibility=vis, qualifier=qual, rtype=ret, name=name, parms=parms)
-    if is_vararg(service):
+    if APIDescription.is_vararg(service):
         parms = generate_vararg_parm_list(service["parms"])
         decl = decl + "{visibility}{qualifier}{rtype} {name}({parms});\n".format(visibility=vis,qualifier=qual,rtype=ret,name=name,parms=parms)
 
@@ -472,12 +451,12 @@ def write_arg_setup(writer, parm):
     the user arguments must be reconstructed at the end of a call.
     The `write_arg_return()` function generates this code.
     """
-    if is_in_out(parm):
-        assert is_class(parm["type"])
+    if APIDescription.is_in_out(parm):
+        assert api_description.is_class(parm["type"])
         t = get_class_name(parm["type"])
         writer.write("ARG_SETUP({t}, {n}Impl, {n}Arg, {n});\n".format(t=t, n=parm["name"]))
-    elif is_array(parm):
-        assert is_class(parm["type"])
+    elif APIDescription.is_array(parm):
+        assert api_description.is_class(parm["type"])
         t = get_class_name(parm["type"])
         writer.write("ARRAY_ARG_SETUP({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
@@ -495,12 +474,12 @@ def write_arg_return(writer, parm):
     generated code undoes what the code generated by
     `write_arg_setup()` does.
     """
-    if is_in_out(parm):
-        assert is_class(parm["type"])
+    if APIDescription.is_in_out(parm):
+        assert api_description.is_class(parm["type"])
         t = get_class_name(parm["type"])
         writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=t, n=parm["name"]))
-    elif is_array(parm):
-        assert is_class(parm["type"])
+    elif APIDescription.is_array(parm):
+        assert api_description.is_class(parm["type"])
         t = get_class_name(parm["type"])
         writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm["name"], s=parm["array-len"]))
 
@@ -531,7 +510,7 @@ def write_class_service_impl(writer, desc, class_name):
             writer.write(impl_call + ";\n")
             for parm in desc["parms"]:
                 write_arg_return(writer, parm)
-        elif is_class(desc["return"]):
+        elif api_description.is_class(desc["return"]):
             writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc["return"]), call=impl_call))
             for parm in desc["parms"]:
                 write_arg_return(writer, parm)
@@ -545,7 +524,7 @@ def write_class_service_impl(writer, desc, class_name):
 
     writer.write("}\n")
 
-    if is_vararg(desc):
+    if APIDescription.is_vararg(desc):
         writer.write("\n")
         write_vararg_service_impl(writer, desc, class_name)
 
@@ -741,7 +720,7 @@ def generate_service_decl(service, namespace=""):
     parms = generate_parm_list(service["parms"], namespace)
 
     decl = "{rtype} {name}({parms});\n".format(rtype=ret, name=name, parms=parms)
-    if is_vararg(service):
+    if APIDescription.is_vararg(service):
         parms = generate_vararg_parm_list(service["parms"])
         decl = decl + "{rtype} {name}({parms});\n".format(rtype=ret,name=name,parms=parms)
 
@@ -754,10 +733,10 @@ def write_common_decl(writer, api_desc):
     """
     writer.write(copyright_header)
     writer.write("\n")
-    namespaces = api_desc["namespace"]
+    namespaces = api_desc.namespaces()
 
-    writer.write("#ifndef {}_INCL\n".format(api_desc["project"]))
-    writer.write("#define {}_INCL\n\n".format(api_desc["project"]))
+    writer.write("#ifndef {}_INCL\n".format(api_desc.project()))
+    writer.write("#define {}_INCL\n\n".format(api_desc.project()))
 
     # write some needed includes and defines
     writer.write("#include <stdint.h>\n\n")
@@ -765,20 +744,20 @@ def write_common_decl(writer, api_desc):
     writer.write("#define LINETOSTR(x) TOSTR(x)\n\n")
 
     # include headers for each defined class
-    for c in api_desc["classes"]:
-        writer.write(generate_include(c["name"] + ".hpp"))
+    for c in api_desc.get_class_names():
+        writer.write(generate_include(c + ".hpp"))
     writer.write("\n")
 
     # write delcarations for all services
-    ns = "::".join(api_desc["namespace"]) + "::"
-    for service in api_desc["services"]:
+    ns = "::".join(namespaces) + "::"
+    for service in api_desc.services():
         decl = generate_service_decl(service, namespace=ns)
         writer.write(decl)
     writer.write("\n")
 
     writer.write("using namespace {};\n\n".format("::".join(namespaces)))
 
-    writer.write("#endif // {}_INCL\n".format(api_desc["project"]))
+    writer.write("#endif // {}_INCL\n".format(api_desc.project()))
 
 def generate_impl_service_import(service_desc):
     """
@@ -799,7 +778,7 @@ def write_allocators_setter(writer, api_desc):
     that has the `sets-allocators` flag.
     """
     writer.write("static void {}() {{\n".format(allocator_setter_name))
-    for c in api_desc["classes"]:
+    for c in api_desc.classes():
         writer.write("".join(generate_allocator_setting(c)))
     writer.write("}\n")
 
@@ -827,7 +806,7 @@ def write_service_impl(writer, desc, namespace=""):
         writer.write(impl_call + ";\n")
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
-    elif is_class(desc["return"]):
+    elif api_description.is_class(desc["return"]):
         writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc["return"]), call=impl_call))
         for parm in desc["parms"]:
             write_arg_return(writer, parm)
@@ -841,7 +820,7 @@ def write_service_impl(writer, desc, namespace=""):
 
     writer.write("}\n")
 
-    if is_vararg(desc):
+    if APIDescription.is_vararg(desc):
         writer.write("\n")
         write_vararg_service_impl(writer, desc, class_name)
 
@@ -855,15 +834,15 @@ def write_common_impl(writer, api_desc):
         writer.write(generate_include(h))
     writer.write("\n")
 
-    for service in api_desc["services"]:
+    for service in api_desc.services():
         writer.write(generate_impl_service_import(service))
     writer.write("\n")
 
     write_allocators_setter(writer, api_desc)
     writer.write("\n")
 
-    ns = "::".join(api_desc["namespace"]) + "::"
-    for service in api_desc["services"]:
+    ns = "::".join(api_desc.namespaces()) + "::"
+    for service in api_desc.services():
         write_service_impl(writer, service, ns)
         writer.write("\n")
 
@@ -945,22 +924,6 @@ def write_class(header_dir, source_dir, class_desc, namespaces, class_names):
     with open(source_path, "w") as writer:
         write_class_source(writer, class_desc, namespaces, class_names)
 
-def gen_class_map(cs, base_name=""):
-    """
-    Generates a dictionary from class names to complete class names
-    that include the names of containing classes from a list of
-    client API class descriptions.
-
-    The generated dictionary should be assigned to `class_type_map`.
-    """
-    class_names = {}
-    for c in cs:
-        name = c["name"]
-        full_name = base_name + name
-        class_names[name] = full_name
-        class_names.update(gen_class_map(c["types"], full_name + "::"))
-    return class_names
-
 def gen_api_impl_includes(classes_desc, api_headers_dir):
     """
     Generates a list of files to be included in the client
@@ -988,22 +951,19 @@ if __name__ == "__main__":
     parser.add_argument("description", help="path to the API description file")
     args = parser.parse_args()
 
-    api = {}
     with open(args.description) as api_src:
-        api = json.load(api_src)
+        api_description = APIDescription.load_json_file(api_src)
 
-    namespaces = api["namespace"]
-    class_names = [ c["name"] for c in api["classes"] ]
-    class_type_map = gen_class_map(api["classes"])
-    inheritance_table = gen_inheritance_table(api["classes"])
-    impl_include_files = gen_api_impl_includes(api["classes"], args.headerdir)
+    namespaces = api_description.namespaces()
+    class_names = api_description.get_class_names()
+    impl_include_files = gen_api_impl_includes(api_description.classes(), args.headerdir)
 
-    for class_desc in api["classes"]:
+    for class_desc in api_description.classes():
         write_class(args.headerdir, args.sourcedir, class_desc, namespaces, class_names)
     with open(os.path.join(args.headerdir, "JitBuilder.hpp"), "w") as writer:
-        write_common_decl(writer, api)
+        write_common_decl(writer, api_description)
     with open(os.path.join(args.sourcedir, "JitBuilder.cpp"), "w") as writer:
-        write_common_impl(writer, api)
+        write_common_impl(writer, api_description)
 
     extras_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extras/cpp")
     names = os.listdir(extras_dir)
