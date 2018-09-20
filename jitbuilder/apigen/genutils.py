@@ -46,7 +46,7 @@ class APIField:
 
     def __init__(self, description, api):
         self.description = description
-        self.api = api
+        self.api = api # not used but included for consistency
 
     ## Basic interface
 
@@ -57,6 +57,70 @@ class APIField:
     def type(self):
         """returns the type of the field."""
         return self.description["type"]
+
+class APIService:
+    """A wrapper for a service API description."""
+
+    def __init__(self, description, api):
+        self.description = description
+        self.api = api
+
+    def name(self):
+        """Returns the base-name of the API service."""
+        return self.description["name"]
+
+    def suffix(self):
+        """Returns the overload suffix of the API service."""
+        return self.description["overloadsuffix"]
+
+    def overload_name(self):
+        """Returns the name of the API service as an overload."""
+        return self.name() + self.suffix()
+
+    def __flags(self):
+        """Returns the list of flags set for this service."""
+        return self.description["flags"]
+
+    def sets_allocators(self):
+        """Returns whether the service sets class allocators."""
+        return "sets-allocators" in self.__flags()
+
+    def is_static(self):
+        """Returns true if this service is static."""
+        return "static" in self.__flags()
+
+    def is_impl_default(self):
+        """Returns true if this service has the 'impl-default' flag set."""
+        return "impl-default" in self.__flags()
+
+    def visibility(self):
+        """
+        Returns the visibility of the service as a string.
+
+        By default, a service is always public, since this is
+        the common case in most APIs.
+        """
+        return "protected" if "protected" in self.__flags() else "public"
+
+    def return_type(self):
+        """Returns the name of the type returned by this service."""
+        return self.description["return"]
+
+    def parameters(self):
+        """Returns a list of the services parameters."""
+        return self.description["parms"]
+
+    def is_vararg(self):
+        """
+        Checks if the given API service description can be
+        implemented as a vararg.
+
+        A service is assumed to be implementable as a vararg
+        if one of its parameters contains the attribute
+        `can_be_vararg`.
+        """
+        vararg_attrs = ["can_be_vararg" in p["attributes"] for p in self.parameters() if "attributes" in p]
+        return reduce(lambda l,r: l or r, vararg_attrs, False)
 
 class APIClass:
     """A wrapper for a class API description."""
@@ -88,7 +152,7 @@ class APIClass:
 
     def services(self):
         """Returns a list of descriptions of all contained services."""
-        return self.description["services"]
+        return [APIService(s, self.api) for s in self.description["services"]]
 
     def constructors(self):
         """Returns a list of the class constructor descriptions."""
@@ -96,7 +160,7 @@ class APIClass:
 
     def callbacks(self):
         """Returns a list of descriptions of all class callbacks."""
-        return self.description["callbacks"]
+        return [APIService(s, self.api) for s in self.description["callbacks"]]
 
     def fields(self):
         """Returns a list of descriptions of all class fields."""
@@ -184,7 +248,7 @@ class APIDescription:
 
     def services(self):
         """Returns a list of all the top-level services defined in the API."""
-        return self.description["services"]
+        return [APIService(s, self) for s in self.description["services"]]
 
     @staticmethod
     def is_in_out(parm_desc):
@@ -196,18 +260,18 @@ class APIDescription:
         """Checks if the given parameter description is for an array parameter."""
         return "attributes" in parm_desc and "array" in parm_desc["attributes"]
 
-    @staticmethod
-    def is_vararg(service_desc):
-        """
-        Checks if the given API service description can be
-        implemented as a vararg.
+    # @staticmethod
+    # def is_vararg(service_desc):
+    #     """
+    #     Checks if the given API service description can be
+    #     implemented as a vararg.
 
-        A service is assumed to be implementable as a vararg
-        if one of its parameters contains the attribute
-        `can_be_vararg`.
-        """
-        vararg_attrs = ["can_be_vararg" in p["attributes"] for p in service_desc["parms"] if "attributes" in p]
-        return reduce(lambda l,r: l or r, vararg_attrs, False)
+    #     A service is assumed to be implementable as a vararg
+    #     if one of its parameters contains the attribute
+    #     `can_be_vararg`.
+    #     """
+    #     vararg_attrs = ["can_be_vararg" in p["attributes"] for p in service_desc["parms"] if "attributes" in p]
+    #     return reduce(lambda l,r: l or r, vararg_attrs, False)
 
     ## Extended interface
 
@@ -262,7 +326,7 @@ def callback_setter_name(callback_desc):
     Produces the name of the function used to set a client callback
     on an implementation object.
     """
-    return "setClientCallback_" + callback_desc["name"]
+    return "setClientCallback_" + callback_desc.name()
 
 def gen_inheritance_table(cs):
     """
@@ -282,4 +346,4 @@ def get_impl_service_name(service):
     Produces the name of the JitBuilder implementation of a
     "stand-alone" service (not an API class member).
     """
-    return "internal_" + service["name"]
+    return "internal_" + service.name()
