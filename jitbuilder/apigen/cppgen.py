@@ -256,8 +256,8 @@ def generate_ctor_decl(ctor_desc, class_name):
     Produces the declaration of a client API class constructor
     from its description and the name of its class.
     """
-    v = "protected: " if "protected" in ctor_desc["flags"] else "public: "
-    parms = generate_parm_list(ctor_desc["parms"])
+    v = ctor_desc.visibility() + ": "
+    parms = generate_parm_list(ctor_desc.parameters())
     decls = "{visibility}{name}({parms});\n".format(visibility=v, name=class_name, parms=parms)
     return decls
 
@@ -332,7 +332,7 @@ def write_class_def(writer, class_desc):
 
 # source utilities ###################################################
 
-def write_ctor_impl(writer, ctor_desc, class_desc):
+def write_ctor_impl(writer, ctor_desc):
     """
     Write the definition of a client API class constructor from
     its description and its class description.
@@ -354,17 +354,18 @@ def write_ctor_impl(writer, ctor_desc, class_desc):
     }
     ```
     """
-    parms = generate_parm_list(ctor_desc["parms"])
-    name = class_desc.name()
+    parms = generate_parm_list(ctor_desc.parameters())
+    name = ctor_desc.name()
     full_name = get_class_name(name)
+    class_desc = ctor_desc.owning_class()
     inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
 
     writer.write("{cname}::{name}({parms}){inherit} {{\n".format(cname=full_name, name=name, parms=parms, inherit=inherit))
-    for parm in ctor_desc["parms"]:
+    for parm in ctor_desc.parameters():
         write_arg_setup(writer, parm)
-    args = generate_arg_list(ctor_desc["parms"])
+    args = generate_arg_list(ctor_desc.parameters())
     writer.write("auto * impl = new {cname}({args});\n".format(cname=get_impl_class_name(name), args=args))
-    for parm in ctor_desc["parms"]:
+    for parm in ctor_desc.parameters():
         write_arg_return(writer, parm)
     writer.write("{impl_cast}->setClient(this);\n".format(impl_cast=to_impl_cast(name,"impl")))
     writer.write("initializeFromImpl({});\n".format(to_opaque_cast("impl",name)))
@@ -666,7 +667,7 @@ def write_class_impl(writer, class_desc):
 
     # write constructor definitions
     for ctor in class_desc.constructors():
-        write_ctor_impl(writer, ctor, class_desc)
+        write_ctor_impl(writer, ctor)
     writer.write("\n")
 
     write_impl_ctor_impl(writer, class_desc)
