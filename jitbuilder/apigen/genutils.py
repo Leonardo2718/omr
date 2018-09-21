@@ -41,6 +41,49 @@ def list_str_prepend(pre, list_str):
 
 # API description handling utilities
 
+class APIType:
+    """
+    A wrapper for a datatype uses in an API description.
+
+    This wrapper, unlike the others, does not wrap an API component
+    description but rather the use of a datatype within a description.
+    The intention is to provide a defined interface for answering
+    questions about types that are used in the API.
+    """
+
+    def __init__(self, type_name, api):
+        self.type_name = type_name
+        self.api = api
+        self.builtin_types = [ "none"
+                             , "boolean"
+                             , "integer"
+                             , "int8"
+                             , "int16"
+                             , "int32"
+                             , "int64"
+                             , "uint32"
+                             , "float"
+                             , "double"
+                             , "pointer"
+                             , "ppointer"
+                             , "unsignedInteger"
+                             , "constString"
+                             , "string"
+                             ]
+
+    def name(self):
+        return self.type_name
+
+    def is_builtin(self):
+        return self.type_name in self.builtin_types
+
+    def is_class(self):
+        return self.api.is_class(self.type_name)
+
+    def as_class(self):
+        assert self.is_class(), "cannot retrieve class description for non-class type `{}`".format(self.type_name)
+        return self.api.get_class_by_name(self.type_name)
+
 class APIField:
     """A wrapper for a field API description."""
 
