@@ -271,7 +271,8 @@ class APIClass:
         Returns the name of the parent class if it has one,
         an empy string otherwise.
         """
-        return self.description["extends"] if self.has_parent() else ""
+        assert self.has_parent(), "class '{}' does not extend any class".format(self.name())
+        return self.api.get_class_by_name(self.description["extends"])
 
     def inner_classes(self):
         """Returns a list of innter classes descriptions."""
@@ -380,7 +381,7 @@ class APIDescription:
     def get_class_by_name(self, c):
         """Returns the description of a class from its name."""
         assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
-        return self.description["classes"][c]
+        return self.class_table[c]
 
     def is_class(self, c):
         """Returns true if the given string is the name of an API class."""
@@ -400,7 +401,7 @@ class APIDescription:
         If `c` does not extend any class, then `c` itself is returned.
         """
         assert self.is_class(c), "'{}' is not a class in the {} API".format(c, self.project())
-        return self.base_of(self.inheritance_table[c]) if c in self.inheritance_table else c
+        return self.base_of(self.inheritance_table[c].name()) if c in self.inheritance_table else c
 
 # Implementation info helpers
 #
