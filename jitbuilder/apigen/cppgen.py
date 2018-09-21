@@ -225,7 +225,7 @@ def generate_field_decl(field, with_visibility = True):
     Produces the declaration of a client API field from
     its description, specifying its visibility as required.
     """
-    t = get_client_type(field.type())
+    t = get_client_type(field.type().name())
     n = field.name()
     v = "public: " if with_visibility else ""
     return "{visibility}{type} {name};\n".format(visibility=v, type=t, name=n)
