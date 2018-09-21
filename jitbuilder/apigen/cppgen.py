@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 ###############################################################################
 # Copyright (c) 2018, 2018 IBM Corp. and others
@@ -86,8 +86,6 @@ builtin_type_map = { "none": "void"
 
 # Classes that have extra APIs, not covered in the master description
 classes_with_extras = [ "TypeDictionary" ]
-
-api_description = None
 
 # List of files to be included in the client API implementation.
 #
