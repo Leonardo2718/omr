@@ -97,7 +97,7 @@ class APIField:
 
     def type(self):
         """Returns the type of the field."""
-        return self.description["type"]
+        return APIType(self.description["type"], self.api)
 
 class APIService:
     """A wrapper for a service API description."""
@@ -304,6 +304,10 @@ class APIClass:
         extend another class, the current class is returned.
         """
         return self.api.get_class_by_name(self.api.base_of(self.name())) if self.has_parent() else self
+
+    def as_type(self):
+        """Returns an instance of APIType corresponding to the described class."""
+        return APIType(self.name(), self.api)
 
 class APIDescription:
     """A class abstract the details of how an API description is stored"""
