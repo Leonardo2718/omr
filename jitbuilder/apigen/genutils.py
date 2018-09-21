@@ -184,7 +184,7 @@ class APIService:
 
     def return_type(self):
         """Returns the name of the type returned by this service."""
-        return self.description["return"]
+        return APIType(self.description["return"], self.api)
 
     def parameters(self):
         """Returns a list of the services parameters."""
