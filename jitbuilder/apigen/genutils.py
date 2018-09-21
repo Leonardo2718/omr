@@ -115,7 +115,7 @@ class APIService:
 
         def type(self):
             """Returns the type of the parameter."""
-            return self.description["type"]
+            return APIType(self.description["type"], self.parameter.api)
 
         def is_in_out(self):
             """Returns whether the parameter is in-out."""
