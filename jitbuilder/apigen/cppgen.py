@@ -238,7 +238,7 @@ def generate_class_service_decl(service,is_callback=False):
     vis = service.visibility() + ": "
     static = "static " if service.is_static() else ""
     qual = ("virtual " if is_callback else "") + static
-    ret = get_client_type(service.return_type())
+    ret = get_client_type(service.return_type().name())
     name = service.name()
     parms = generate_parm_list(service.parameters())
 
@@ -492,7 +492,7 @@ def write_class_service_impl(writer, desc, class_name):
     done before the implementation function  is called and the
     corresponding reconstruction is done after.
     """
-    rtype = get_client_type(desc.return_type())
+    rtype = get_client_type(desc.return_type().name())
     name = desc.name()
     parms = generate_parm_list(desc.parameters())
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype, cname=class_name, name=name, parms=parms))
@@ -505,15 +505,15 @@ def write_class_service_impl(writer, desc, class_name):
 
         args = generate_arg_list(desc.parameters())
         impl_call = "{impl_cast}->{sname}({args})".format(impl_cast=to_impl_cast(class_name,"_impl"),sname=name,args=args)
-        if "none" == desc.return_type():
+        if "none" == desc.return_type().name():
             writer.write(impl_call + ";\n")
             for parm in desc.parameters():
                 write_arg_return(writer, parm)
-        elif api_description.is_class(desc.return_type()):
-            writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc.return_type()), call=impl_call))
+        elif desc.return_type().is_class():
+            writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc.return_type().name()), call=impl_call))
             for parm in desc.parameters():
                 write_arg_return(writer, parm)
-            writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type()))
+            writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type().name()))
             writer.write("return clientObj;\n")
         else:
             writer.write("auto ret = " + impl_call + ";\n")
@@ -537,7 +537,7 @@ def write_vararg_service_impl(writer, desc, class_name):
     their implementation simply re-packages the vararg into
     an array and calls the array version of the function.
     """
-    rtype = get_client_type(desc.return_type())
+    rtype = get_client_type(desc.return_type().name())
     name = desc.name()
     vararg = desc.parameters()[-1]
     vararg_type = get_client_type(vararg.type().name())
@@ -551,10 +551,10 @@ def write_vararg_service_impl(writer, desc, class_name):
     writer.write("va_start(vararg, {num});\n".format(num=vararg.array_len()))
     writer.write("for (int i = 0; i < {num}; ++i) {{ {arg}[i] = va_arg(vararg, {t}); }}\n".format(num=vararg.array_len(),arg=vararg.name(),t=vararg_type))
     writer.write("va_end(vararg);\n")
-    get_ret = "" if "none" == desc.return_type() else "{rtype} ret = ".format(rtype=rtype)
+    get_ret = "" if "none" == desc.return_type().name() else "{rtype} ret = ".format(rtype=rtype)
     writer.write("{get_ret}{name}({args});\n".format(get_ret=get_ret,name=name,args=args))
     writer.write("delete[] {arg};\n".format(arg=vararg.name()))
-    if "none" != desc.return_type():
+    if "none" != desc.return_type().name():
         writer.write("return ret;\n")
     writer.write("}\n")
 
@@ -602,7 +602,7 @@ def write_callback_thunk(writer, class_desc, callback_desc):
         }
     ```
     """
-    rtype = get_client_type(callback_desc.return_type())
+    rtype = get_client_type(callback_desc.return_type().name())
     thunk = callback_thunk_name(class_desc, callback_desc)
     ctype = get_client_type(class_desc.name())
     callback = callback_desc.name()
@@ -714,7 +714,7 @@ def generate_allocator_setting(class_desc):
 
 def generate_service_decl(service, namespace=""):
     """Generates a client API service declaraion from its description"""
-    ret = get_client_type(service.return_type())
+    ret = get_client_type(service.return_type().name())
     name = service.name()
     parms = generate_parm_list(service.parameters(), namespace)
 
@@ -763,7 +763,7 @@ def generate_impl_service_import(service_desc):
     Generates an import for the implementation function
     corresponding to a client API service.
     """
-    rt = get_impl_type(service_desc.return_type())
+    rt = get_impl_type(service_desc.return_type().name())
     n = get_impl_service_name(service_desc)
     ps=generate_parm_list(service_desc.parameters(), is_client=False)
     return "extern {rt} {n}({ps});\n".format(rt=rt, n=n, ps=ps)
@@ -788,7 +788,7 @@ def write_service_impl(writer, desc, namespace=""):
     The same approach is used to implement non-class services
     as is used for class services.
     """
-    rtype = get_client_type(desc.return_type())
+    rtype = get_client_type(desc.return_type().name())
     name = desc.name()
     parms = generate_parm_list(desc.parameters(), namespace)
     writer.write("{rtype} {name}({parms}) {{\n".format(rtype=rtype, name=name, parms=parms))
@@ -801,11 +801,11 @@ def write_service_impl(writer, desc, namespace=""):
 
     args = generate_arg_list(desc.parameters())
     impl_call = "{sname}({args})".format(sname=get_impl_service_name(desc),args=args)
-    if "none" == desc.return_type():
+    if "none" == desc.return_type().name():
         writer.write(impl_call + ";\n")
         for parm in desc.parameters():
             write_arg_return(writer, parm)
-    elif api_description.is_class(desc.return_type()):
+    elif desc.return_type().is_class():
         writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc.return_type()), call=impl_call))
         for parm in desc.parameters():
             write_arg_return(writer, parm)
