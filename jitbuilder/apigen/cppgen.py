@@ -159,7 +159,7 @@ def generate_parm(parm_desc, namespace="", is_client=True):
     The parameter declaration is usable in a function declaration.
     """
     fmt = "{t}* {n}" if parm_desc.is_in_out() or parm_desc.is_array() else "{t} {n}"
-    t = parm_desc.type()
+    t = parm_desc.type().name()
     t = get_client_type(t, namespace) if is_client else get_impl_type(t)
     return fmt.format(t=t,n=parm_desc.name())
 
@@ -185,7 +185,7 @@ def generate_arg(parm_desc):
     the specified parameter.
     """
     n = parm_desc.name()
-    t = parm_desc.type()
+    t = parm_desc.type().name()
     return (n + "Arg") if parm_desc.is_in_out() or parm_desc.is_array() else grab_impl(n,t)
 
 def generate_arg_list(parms_desc):
@@ -417,7 +417,7 @@ def write_impl_initializer(writer, class_desc):
 
     for field in class_desc.fields():
         fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
-        writer.write(fmt.format(fname=field.name(), ftype=field.type(), impl_cast=to_impl_cast(name,"_impl")))
+        writer.write(fmt.format(fname=field.name(), ftype=field.type().name(), impl_cast=to_impl_cast(name,"_impl")))
         writer.write("{fname} = clientObj_{fname};\n".format(fname=field.name()))
 
     impl_cast = to_impl_cast(name,"_impl")
@@ -451,12 +451,12 @@ def write_arg_setup(writer, parm):
     The `write_arg_return()` function generates this code.
     """
     if parm.is_in_out():
-        assert api_description.is_class(parm.type())
-        t = get_class_name(parm.type())
+        assert parm.type().is_class()
+        t = get_class_name(parm.type().name())
         writer.write("ARG_SETUP({t}, {n}Impl, {n}Arg, {n});\n".format(t=t, n=parm.name()))
     elif parm.is_array():
-        assert api_description.is_class(parm.type())
-        t = get_class_name(parm.type())
+        assert parm.type().is_class()
+        t = get_class_name(parm.type().name())
         writer.write("ARRAY_ARG_SETUP({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm.name(), s=parm.array_len()))
 
 def write_arg_return(writer, parm):
@@ -474,12 +474,12 @@ def write_arg_return(writer, parm):
     `write_arg_setup()` does.
     """
     if parm.is_in_out():
-        assert api_description.is_class(parm.type())
-        t = get_class_name(parm.type())
+        assert parm.type().is_class()
+        t = get_class_name(parm.type().name())
         writer.write("ARG_RETURN({t}, {n}Impl, {n});\n".format(t=t, n=parm.name()))
     elif parm.is_array():
-        assert api_description.is_class(parm.type())
-        t = get_class_name(parm.type())
+        assert parm.type().is_class()
+        t = get_class_name(parm.type().name())
         writer.write("ARRAY_ARG_RETURN({t}, {s}, {n}Arg, {n});\n".format(t=t, n=parm.name(), s=parm.array_len()))
 
 def write_class_service_impl(writer, desc, class_name):
@@ -540,7 +540,7 @@ def write_vararg_service_impl(writer, desc, class_name):
     rtype = get_client_type(desc.return_type())
     name = desc.name()
     vararg = desc.parameters()[-1]
-    vararg_type = get_client_type(vararg.type())
+    vararg_type = get_client_type(vararg.type().name())
 
     parms = generate_vararg_parm_list(desc.parameters())
     writer.write("{rtype} {cname}::{name}({parms}) {{\n".format(rtype=rtype,cname=class_name,name=name,parms=parms))
@@ -584,7 +584,7 @@ def generate_callback_arg_list(parm_descs):
     callback body.
     """
     cast_fmt = "static_cast<{t}>({n})"
-    args= [generate_arg(p) if p.type() in builtin_type_map else cast_fmt.format(t=get_client_type(p.type()),n=p.name()) for p in parm_descs]
+    args= [generate_arg(p) if p.type().is_builtin() else cast_fmt.format(t=get_client_type(p.type().name()),n=p.name()) for p in parm_descs]
     return ", ".join(args)
 
 def write_callback_thunk(writer, class_desc, callback_desc):
