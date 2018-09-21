@@ -285,7 +285,7 @@ def write_class_def(writer, class_desc):
     name = class_desc.name()
     has_extras = name in classes_with_extras
 
-    inherit = ": public {parent}".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
+    inherit = ": public {parent}".format(parent=get_class_name(class_desc.parent().name())) if class_desc.has_parent() else ""
     writer.write("class {name}{inherit} {{\n".format(name=name,inherit=inherit))
 
     # write nested classes
@@ -356,7 +356,7 @@ def write_ctor_impl(writer, ctor_desc):
     name = ctor_desc.name()
     full_name = get_class_name(name)
     class_desc = ctor_desc.owning_class()
-    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
+    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent().name())) if class_desc.has_parent() else ""
 
     writer.write("{cname}::{name}({parms}){inherit} {{\n".format(cname=full_name, name=name, parms=parms, inherit=inherit))
     for parm in ctor_desc.parameters():
@@ -382,7 +382,7 @@ def write_impl_ctor_impl(writer, class_desc):
     """
     name = class_desc.name()
     full_name = get_class_name(name)
-    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
+    inherit = ": {parent}((void *)NULL)".format(parent=get_class_name(class_desc.parent().name())) if class_desc.has_parent() else ""
 
     writer.write("{cname}::{name}(void * impl){inherit} {{\n".format(cname=full_name, name=name, inherit=inherit))
     writer.write("if (impl != NULL) {\n")
@@ -411,7 +411,7 @@ def write_impl_initializer(writer, class_desc):
     writer.write("void {cname}::initializeFromImpl(void * impl) {{\n".format(cname=full_name))
 
     if class_desc.has_parent():
-        writer.write("{parent}::initializeFromImpl(impl);\n".format(parent=get_class_name(class_desc.parent())))
+        writer.write("{parent}::initializeFromImpl(impl);\n".format(parent=get_class_name(class_desc.parent().name())))
     else:
         writer.write("_impl = impl;\n")
 
