@@ -55,8 +55,47 @@ class APIField:
         return self.description["name"]
 
     def type(self):
-        """returns the type of the field."""
+        """Returns the type of the field."""
         return self.description["type"]
+
+class APIParameter:
+    """A wrapper for a service parameter API description."""
+
+    def __init__(self, description, parameter):
+        self.description = description
+        self.parameter = parameter
+
+    def name(self):
+        """Returns the name of the parameter."""
+        return self.description["name"]
+
+    def type(self):
+        """Returns the type of the parameter."""
+        return self.description["type"]
+
+    def is_in_out(self):
+        """Returns whether the parameter is in-out."""
+        return "attributes" in self.description and "in_out" in self.description["attributes"]
+
+    def is_array(self):
+        """Returns whether the parameter is an array."""
+        return "attributes" in self.description and "array" in self.description["attributes"]
+
+    def array_len(self):
+        """
+        Returns the name of the service parameter that
+        specifies the length of this array parameter.
+
+        This method can only be called on descriptions
+        of array parameters.
+        """
+        assert self.is_array(), "array_len() can only be called on descriptions of array parameters"
+        assert "array-len" in self.description, "'array-len' field missing in array parameter description"
+        return self.description["array-len"]
+
+    def can_be_vararg(self):
+        """Returns whether the parameter may be implemented as a vararg."""
+        return "attributes" in self.description and "can_be_vararg" in self.description["attributes"]
 
 class APIService:
     """A wrapper for a service API description."""
@@ -108,7 +147,7 @@ class APIService:
 
     def parameters(self):
         """Returns a list of the services parameters."""
-        return self.description["parms"]
+        return [APIParameter(p, self) for p in self.description["parms"]]
 
     def is_vararg(self):
         """
@@ -119,7 +158,7 @@ class APIService:
         if one of its parameters contains the attribute
         `can_be_vararg`.
         """
-        vararg_attrs = ["can_be_vararg" in p["attributes"] for p in self.parameters() if "attributes" in p]
+        vararg_attrs = [p.can_be_vararg() for p in self.parameters()]
         return reduce(lambda l,r: l or r, vararg_attrs, False)
 
 class APICallback(APIService):
@@ -299,15 +338,15 @@ class APIDescription:
         """Returns a list of all the top-level services defined in the API."""
         return [APIService(s, self) for s in self.description["services"]]
 
-    @staticmethod
-    def is_in_out(parm_desc):
-        """Checks if the given parameter description is for an in-out parameter."""
-        return "attributes" in parm_desc and "in_out" in parm_desc["attributes"]
+    # @staticmethod
+    # def is_in_out(parm_desc):
+    #     """Checks if the given parameter description is for an in-out parameter."""
+    #     return "attributes" in parm_desc and "in_out" in parm_desc["attributes"]
 
-    @staticmethod
-    def is_array(parm_desc):
-        """Checks if the given parameter description is for an array parameter."""
-        return "attributes" in parm_desc and "array" in parm_desc["attributes"]
+    # @staticmethod
+    # def is_array(parm_desc):
+    #     """Checks if the given parameter description is for an array parameter."""
+    #     return "attributes" in parm_desc and "array" in parm_desc["attributes"]
 
     # @staticmethod
     # def is_vararg(service_desc):
