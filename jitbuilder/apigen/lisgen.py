@@ -236,15 +236,15 @@ if __name__ == "__main__":
             with open(os.path.join(args.headerdir, fname), "w") as writer:
                 write_recorder_source(writer, class_desc, namespaces)
 
-    # for class_desc in api_description.classes():
-    #     write_class(args.headerdir, args.sourcedir, class_desc, namespaces, class_names)
-    # with open(os.path.join(args.headerdir, "JitBuilder.hpp"), "w") as writer:
-    #     write_common_decl(writer, api_description)
-    # with open(os.path.join(args.sourcedir, "JitBuilder.cpp"), "w") as writer:
-    #     write_common_impl(writer, api_description)
+    for class_desc in api_description.classes():
+        cppgen.write_class(args.headerdir, args.sourcedir, class_desc, namespaces, class_names)
+    with open(os.path.join(args.headerdir, "JitBuilder.hpp"), "w") as writer:
+        cppgen.write_common_decl(writer, api_description)
+    with open(os.path.join(args.sourcedir, "JitBuilder.cpp"), "w") as writer:
+        cppgen.write_common_impl(writer, api_description)
 
-    # extras_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extras", "cpp")
-    # names = os.listdir(extras_dir)
-    # for name in names:
-    #     if name.endswith(".hpp"):
-    #         shutil.copy(os.path.join(extras_dir,name), os.path.join(args.headerdir,name))
+    extras_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extras", "cpp")
+    names = os.listdir(extras_dir)
+    for name in names:
+        if name.endswith(".hpp"):
+            shutil.copy(os.path.join(extras_dir,name), os.path.join(args.headerdir,name))
