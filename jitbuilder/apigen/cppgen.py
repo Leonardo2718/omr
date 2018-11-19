@@ -304,7 +304,7 @@ def write_class_def(writer, class_desc):
     # TODO: don't hardcode the member variable name
     if name in ["IlBuilder", "BytecodeBuilder", "MethodBuilder"]:
         writer.write("public: std::vector<{}Listener *> listeners;\n".format(name))
-        writer.write("public: void RegisterListener({}Llistener * l) {{ listeners.push_back(l); }}\n".format(name))
+        writer.write("public: void RegisterListener({}Listener * l) {{ listeners.push_back(l); }}\n".format(name))
 
     for ctor in class_desc.constructors():
         decls = generate_ctor_decl(ctor, name)
@@ -504,10 +504,14 @@ def write_class_service_impl(writer, desc, class_desc):
     if desc.is_impl_default():
         writer.write("return 0;\n")
     else:
+        # TODO: don't hardcode class names, check class description property instead
+        ilbuilder_classes =  ["IlBuilder", "BytecodeBuilder", "MethodBuilder"]
+
         # write for loop to notify listeners of called service
-        writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
-        writer.write("   listeners[i]->{}({});\n".format(desc.name(), ", ".join([a.name() for a in desc.parameters()])))
-        writer.write("}\n")
+        if class_desc.name() in ilbuilder_classes:
+            writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
+            writer.write("   listeners[i]->{}({});\n".format(desc.name(), ", ".join([a.name() for a in desc.parameters()])))
+            writer.write("}\n")
 
         for parm in desc.parameters():
             write_arg_setup(writer, parm)
@@ -521,10 +525,10 @@ def write_class_service_impl(writer, desc, class_desc):
 
                 # copy listeners into newly created IlBuilder objects
                 # TODO: don't hardcode class names, check class description property instead
-                if parm.type().name() in ["IlBuilder", "BytecodeBuilder", "MethodBuilder"] and parm.is_in_out():
+                if parm.type().name() in ilbuilder_classes and class_desc.name() in ilbuilder_classes and parm.is_in_out():
                     writer.write("if ((*{})->listeners.size() == 0) {{\n".format(parm.name()))
                     writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
-                    writer.write("    listeners[i].cloneInto(*{});\n".format(parm.name()))
+                    writer.write("    listeners[i]->cloneInto(*{});\n".format(parm.name()))
                     writer.write("  }\n")
                     writer.write("}\n")
         elif desc.return_type().is_class():
@@ -534,10 +538,10 @@ def write_class_service_impl(writer, desc, class_desc):
 
                 # copy listeners into newly created IlBuilder objects
                 # TODO: don't hardcode class names, check class description property instead
-                if parm.type().name() in ["IlBuilder", "BytecodeBuilder", "MethodBuilder"] and parm.is_in_out():
+                if parm.type().name() in ilbuilder_classes and class_desc.name() in ilbuilder_classes and parm.is_in_out():
                     writer.write("if ((*{})->listeners.size() == 0) {{\n".format(parm.name()))
                     writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
-                    writer.write("    listeners[i].cloneInto(*{});\n".format(parm.name()))
+                    writer.write("    listeners[i]->cloneInto(*{});\n".format(parm.name()))
                     writer.write("  }\n")
                     writer.write("}\n")
             writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type().name()))
@@ -549,10 +553,10 @@ def write_class_service_impl(writer, desc, class_desc):
 
                 # copy listeners into newly created IlBuilder objects
                 # TODO: don't hardcode class names, check class description property instead
-                if parm.type().name() in ["IlBuilder", "BytecodeBuilder", "MethodBuilder"] and parm.is_in_out():
+                if parm.type().name() in ilbuilder_classes and class_desc.name() in ilbuilder_classes and parm.is_in_out():
                     writer.write("if ((*{})->listeners.size() == 0) {{\n".format(parm.name()))
                     writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
-                    writer.write("    listeners[i].cloneInto(*{});\n".format(parm.name()))
+                    writer.write("    listeners[i]->cloneInto(*{});\n".format(parm.name()))
                     writer.write("  }\n")
                     writer.write("}\n")
             writer.write("return ret;\n")
@@ -898,13 +902,15 @@ def write_class_header(writer, class_desc, namespaces, class_names):
         writer.write(generate_include('{}ExtrasOutsideClass.hpp'.format(class_desc.name())))
     writer.write("\n")
 
-    # write include for listener object
-    # TODO: user name generator instead of hardcoding format string
-    writer.write(generate_include("{}Listner.hpp".format(class_desc.name())))
+    # TODO: don't hardcode class names, check class description property instead
+    if class_desc.name() in ["IlBuilder", "BytecodeBuilder", "MethodBuilder"]:
+        # write include for listener object
+        # TODO: user name generator instead of hardcoding format string
+        writer.write(generate_include("{}Listener.hpp".format(class_desc.name())))
 
-    # write include for vector, which is needed for listeners
-    # TODO: only generate include of vector when needed
-    writer.write("#include <vector>\n\n")
+        # write include for vector, which is needed for listeners
+        # TODO: only generate include of vector when needed
+        writer.write("#include <vector>\n\n")
 
     # open each nested namespace
     for n in namespaces:
