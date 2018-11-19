@@ -56,7 +56,7 @@ elseif(OMR_ARCH_POWER)
 endif()
 
 # Generated client API files
-set(CPP_API_GENERATOR ${CMAKE_CURRENT_SOURCE_DIR}/apigen/cppgen.py)
+set(CPP_API_GENERATOR ${CMAKE_CURRENT_SOURCE_DIR}/apigen/lisgen.py)
 set(JITBUILDER_CPP_API_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/release/cpp/include)
 set(JITBUILDER_CPP_API_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}client/cpp)
 set(JITBUILDER_API_DESCRIPTION ${CMAKE_CURRENT_SOURCE_DIR}/apigen/jitbuilder.api.json)
