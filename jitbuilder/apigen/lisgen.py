@@ -101,6 +101,12 @@ def write_listener_header(writer, class_desc, namespaces):
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
+    # TODO: don't reach into `api` field of class description
+    writer.write("// forward declarations for all API classes\n")
+    for c in class_desc.api.get_class_names():
+        writer.write("class {};\n".format(c))
+    writer.write("\n")
+
     write_class_listener(writer, class_desc)
     writer.write("\n")
 
@@ -157,6 +163,12 @@ def write_recorder_header(writer, class_desc, namespaces):
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
+    # TODO: don't reach into `api` field of class description
+    writer.write("// forward declarations for all API classes\n")
+    for c in class_desc.api.get_class_names():
+        writer.write("class {};\n".format(c))
+    writer.write("\n")
+
     write_recorder_class_def(writer, class_desc)
     writer.write("\n")
 
@@ -174,6 +186,8 @@ def write_recorder_service_def(writer, service):
     writer.write('void {}({}) {{ std::cout << "{}\\n" }}\n'.format(name, parms, name))
 
 def write_recorder_source(writer, class_desc, namespaces):
+    for f in cppgen.impl_include_files:
+        writer.write(cppgen.generate_include(f))
     # TODO: don't hardcode includes
     writer.write(cppgen.generate_include("IlBuilderRecorder.hpp"))
     writer.write(cppgen.generate_include("BytecodeBuilderRecorder.hpp"))
@@ -216,6 +230,8 @@ if __name__ == "__main__":
 
     namespaces = api_description.namespaces()
     class_names = api_description.get_class_names()
+
+    cppgen.impl_include_files = cppgen.gen_api_impl_includes(api_description.classes(), args.headerdir)
 
     for class_desc in api_description.classes():
         # TODO: don't just check if a class is an IlBuilder, check a property
