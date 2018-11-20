@@ -104,9 +104,14 @@ def write_listener_header(writer, class_desc, namespaces):
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
+    # TODO: don't reach into `api` field of class description,
+    #       the information for what needs to be forward declared
+    #       should be stored somewhere else
     writer.write("// forward declarations for all API classes\n")
     for c in class_desc.api.classes():
         writer.write("class {};\n".format(c.name()))
+        # Because nested classes are now "unnested", we can forward declare them
+        # TODO: find more elegant/general solution for dealing with nested/neighbour classes
         for c_ in c.inner_classes():
             writer.write("class {};\n".format(c_.name()))
     writer.write("\n")
@@ -114,7 +119,7 @@ def write_listener_header(writer, class_desc, namespaces):
     write_class_listener(writer, class_desc)
     writer.write("\n")
 
-    for n in namespaces:
+    for n in reversed(namespaces):
         writer.write("}} // namespace {}\n".format(n))
 
     writer.write("#endif // {}\n".format(guard_name))
@@ -124,6 +129,28 @@ def write_listener_header(writer, class_desc, namespaces):
 def generate_recorder_name(class_desc):
     return class_desc.name() + "Recorder"
 
+def collect_services(class_desc):
+    """
+    Collect the description of all the services in the given class description 
+    and all parent class descriptions.
+    """
+    services = class_desc.services()
+    services += class_desc.callbacks()
+    if class_desc.has_parent():
+        services += collect_services(class_desc.parent())
+    return services
+
+def dedup(l):
+    """
+    Deduplicate the elements in an list (or an iterator really).
+    """
+    # TODO: find better names than l_, i, and l
+    l_ = []
+    for i in l:
+        if i not in l_:
+            l_.append(i)
+    return l_
+
 def generate_recorder_service_decl(service):
     """
     Write the declaraion of a service (method) of a recorder.
@@ -131,21 +158,6 @@ def generate_recorder_service_decl(service):
     name = service.name()
     parms = cppgen.generate_parm_list(service.parameters())
     return 'virtual void {}({});\n'.format(name, parms)
-
-def collect_services(class_desc):
-    services = class_desc.services()
-    services += class_desc.callbacks()
-    if class_desc.has_parent():
-        services += collect_services(class_desc.parent())
-    return services
-
-def write_recorder_service_decls(writer, class_desc):
-    for service in class_desc.services():
-        writer.write(generate_recorder_service_decl(service))
-    for service in class_desc.callbacks():
-        writer.write(generate_recorder_service_decl(service))
-    if class_desc.has_parent():
-        write_recorder_service_decls(writer, class_desc.parent())
 
 def write_recorder_class_def(writer, class_desc):
     """
@@ -155,13 +167,9 @@ def write_recorder_class_def(writer, class_desc):
     writer.write("class {}: public {} {{\n".format(generate_recorder_name(class_desc), generate_listener_class_name(class_desc)))
     writer.write("public:\n")
 
-    # write_recorder_service_decls(writer, class_desc)
-    services_ = collect_services(class_desc)
-    services = []
-    for s in services_:
-        if s not in services:
-            services.append(s) 
-    for s in services:
+    # write service recorder implementation
+    # TODO: find a better way than just collecting all the services and deduplicating them
+    for s in dedup(collect_services(class_desc)):
         writer.write(generate_recorder_service_decl(s))
     writer.write("\n")
 
@@ -181,16 +189,22 @@ def write_recorder_header(writer, class_desc, namespaces):
 
     writer.write("#ifndef {}\n".format(guard_name))
     writer.write("#define {}\n".format(guard_name))
+
+    # TODO: figure out what actually needs to be included and include it
     writer.write(cppgen.generate_include("{}.hpp".format(generate_listener_class_name(class_desc))))
 
     for n in namespaces:
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
-    # TODO: don't reach into `api` field of class description
+    # TODO: don't reach into `api` field of class description,
+    #       the information for what needs to be forward declared
+    #       should be stored somewhere else
     writer.write("// forward declarations for all API classes\n")
     for c in class_desc.api.classes():
         writer.write("class {};\n".format(c.name()))
+        # Because nested classes are now "unnested", we can forward declare them
+        # TODO: find more elegant/general solution for dealing with nested/neighbour classes
         for c_ in c.inner_classes():
             writer.write("class {};\n".format(c_.name()))
     writer.write("\n")
@@ -198,7 +212,7 @@ def write_recorder_header(writer, class_desc, namespaces):
     write_recorder_class_def(writer, class_desc)
     writer.write("\n")
 
-    for n in namespaces:
+    for n in reversed(namespaces):
         writer.write("}} // namespace {}\n".format(n))
 
     writer.write("#endif // {}\n".format(guard_name))
@@ -210,14 +224,6 @@ def write_recorder_service_def(writer, cname, service):
     name = service.name()
     parms = cppgen.generate_parm_list(service.parameters())
     writer.write('void {}::{}({}) {{ std::cout << "{}\\n"; }}\n'.format(cname, name, parms, name))
-
-def write_recorder_service_defs(writer, cname, class_desc):
-    for service in class_desc.services():
-        write_recorder_service_def(writer, cname + "Recorder", service)
-    for service in class_desc.callbacks():
-        write_recorder_service_def(writer, cname + "Recorder", service)
-    if class_desc.has_parent():
-        write_recorder_service_defs(writer, cname, class_desc.parent())
 
 def write_recorder_source(writer, headerdir, class_desc, namespaces):
     for f in cppgen.impl_include_files:
@@ -233,22 +239,19 @@ def write_recorder_source(writer, headerdir, class_desc, namespaces):
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
-    # write_recorder_service_defs(writer, class_desc.name(), class_desc)
-    services_ = collect_services(class_desc)
-    services = []
-    for s in services_:
-        if s not in services:
-            services.append(s) 
-    for s in services:
+    # write service recorder implementation
+    # TODO: find a better way than just collecting all the services and deduplicating them
+    for s in dedup(collect_services(class_desc)):
         write_recorder_service_def(writer, class_desc.name() + "Recorder", s)
 
-    # TODO: don't hard code the acceptors, traverse the class description heirarchy
+    # TODO: don't hardcode the acceptors, traverse the class description heirarchy
     #       instead and find all the classes than need an acceptor
+    # TODO: use string formatting instead of concatnation
     writer.write("bool "+class_desc.name()+"Recorder::cloneInto(IlBuilder * b) { b->RegisterListener(new IlBuilderRecorder()); return true; }\n")
     writer.write("bool "+class_desc.name()+"Recorder::cloneInto(BytecodeBuilder * b) { b->RegisterListener(new BytecodeBuilderRecorder()); return true; }\n")
     writer.write("bool "+class_desc.name()+"Recorder::cloneInto(MethodBuilder * b) { b->RegisterListener(new MethodBuilderRecorder()); return true; }\n")
 
-    for n in namespaces:
+    for n in reversed(namespaces):
         writer.write("}} // namespace {}\n".format(n))
 
 # main program #################################################################

@@ -98,6 +98,7 @@ def generate_include(path):
 
 def get_class_name(c):
     """Returns the name of a given class in the client API implementation."""
+    # TODO: fix to match properly handle bogh neighbour and inner classes
     return c.name()
 
 def get_impl_class_name(c):
@@ -282,8 +283,8 @@ def write_class_def(writer, class_desc):
     name = class_desc.name()
     has_extras = name in classes_with_extras
 
-    # write nested classes
-    #writer.write("public:\n")
+    # write neighbour (previously nested) class definitions
+    # TODO: generalize handling of "neighbour" classes
     for c in class_desc.inner_classes():
         write_class_def(writer, c)
     writer.write("\n")
@@ -303,6 +304,7 @@ def write_class_def(writer, class_desc):
     # listener list and registration function declaration
     # TODO: don't hardcode class names, check for property in class description instead
     # TODO: don't hardcode the member variable name
+    # TODO: find better way of handling registering parent listeners
     if name == "IlBuilder":
         writer.write("public: std::vector<{}Listener *> listeners;\n".format(name))
         writer.write("public: void RegisterListener({}Listener * l) {{ listeners.push_back(l); }}\n".format(name))
@@ -515,7 +517,9 @@ def write_class_service_impl(writer, desc, class_desc):
         ilbuilder_classes =  ["IlBuilder", "BytecodeBuilder", "MethodBuilder"]
 
         # write for loop to notify listeners of called service
+        # TODO: don't hardcode class names, check class description property instead
         if class_desc.name() in ilbuilder_classes:
+            # TODO: don't hardcode name `listeners`
             writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
             writer.write("   listeners[i]->{}({});\n".format(desc.name(), ", ".join([a.name() for a in desc.parameters()])))
             writer.write("}\n")
@@ -532,6 +536,7 @@ def write_class_service_impl(writer, desc, class_desc):
 
                 # copy listeners into newly created IlBuilder objects
                 # TODO: don't hardcode class names, check class description property instead
+                # TODO: don't hardcode name `listeners`
                 if parm.type().name() in ilbuilder_classes and class_desc.name() in ilbuilder_classes and parm.is_in_out():
                     writer.write("if ((*{})->listeners.size() == 0) {{\n".format(parm.name()))
                     writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
@@ -545,6 +550,7 @@ def write_class_service_impl(writer, desc, class_desc):
 
                 # copy listeners into newly created IlBuilder objects
                 # TODO: don't hardcode class names, check class description property instead
+                # TODO: don't hardcode name `listeners`
                 if parm.type().name() in ilbuilder_classes and class_desc.name() in ilbuilder_classes and parm.is_in_out():
                     writer.write("if ((*{})->listeners.size() == 0) {{\n".format(parm.name()))
                     writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
@@ -553,6 +559,7 @@ def write_class_service_impl(writer, desc, class_desc):
                     writer.write("}\n")
             writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type().name()))
             # TODO: don't use `ilbuilder_classes`, check class description property instead
+            # TODO: don't hardcode name `listeners`
             if desc.return_type().name() in ilbuilder_classes:
                 writer.write("if (clientObj->listeners.size() == 0) {\n")
                 writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
