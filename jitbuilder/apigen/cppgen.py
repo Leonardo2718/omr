@@ -98,7 +98,7 @@ def generate_include(path):
 
 def get_class_name(c):
     """Returns the name of a given class in the client API implementation."""
-    return "::".join(c.containing_classes() + [c.name()])
+    return c.name()
 
 def get_impl_class_name(c):
     """Returns the name of a given class in the JitBuilder implementation."""
@@ -282,13 +282,14 @@ def write_class_def(writer, class_desc):
     name = class_desc.name()
     has_extras = name in classes_with_extras
 
-    inherit = ": public {parent}".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
-    writer.write("class {name}{inherit} {{\n".format(name=name,inherit=inherit))
-
     # write nested classes
-    writer.write("public:\n")
+    #writer.write("public:\n")
     for c in class_desc.inner_classes():
         write_class_def(writer, c)
+    writer.write("\n")
+
+    inherit = ": public {parent}".format(parent=get_class_name(class_desc.parent())) if class_desc.has_parent() else ""
+    writer.write("class {name}{inherit} {{\n".format(name=name,inherit=inherit))
 
     # write fields
     for field in class_desc.fields():
@@ -300,11 +301,17 @@ def write_class_def(writer, class_desc):
         writer.write("public: void* _impl;\n")
 
     # listener list and registration function declaration
-    # TODO: don't hard code class names, check for property in class description instead
+    # TODO: don't hardcode class names, check for property in class description instead
     # TODO: don't hardcode the member variable name
-    if name in ["IlBuilder", "BytecodeBuilder", "MethodBuilder"]:
+    if name == "IlBuilder":
         writer.write("public: std::vector<{}Listener *> listeners;\n".format(name))
         writer.write("public: void RegisterListener({}Listener * l) {{ listeners.push_back(l); }}\n".format(name))
+    elif name == "BytecodeBuilder":
+        writer.write("public: std::vector<{}Listener *> listeners;\n".format(name))
+        writer.write("public: void RegisterListener({}Listener * l) {{ IlBuilder::RegisterListener(l); listeners.push_back(l); }}\n".format(name))
+    elif name == "MethodBuilder":
+        writer.write("public: std::vector<{}Listener *> listeners;\n".format(name))
+        writer.write("public: void RegisterListener({}Listener * l) {{ IlBuilder::RegisterListener(l); listeners.push_back(l); }}\n".format(name))
 
     for ctor in class_desc.constructors():
         decls = generate_ctor_decl(ctor, name)
@@ -545,6 +552,13 @@ def write_class_service_impl(writer, desc, class_desc):
                     writer.write("  }\n")
                     writer.write("}\n")
             writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type().name()))
+            # TODO: don't use `ilbuilder_classes`, check class description property instead
+            if desc.return_type().name() in ilbuilder_classes:
+                writer.write("if (clientObj->listeners.size() == 0) {\n")
+                writer.write("  for (int i = 0; i < listeners.size(); ++i) {\n")
+                writer.write("    listeners[i]->cloneInto(clientObj);\n")
+                writer.write("  }\n")
+                writer.write("}\n")
             writer.write("return clientObj;\n")
         else:
             writer.write("auto ret = " + impl_call + ";\n")
@@ -907,6 +921,7 @@ def write_class_header(writer, class_desc, namespaces, class_names):
         # write include for listener object
         # TODO: user name generator instead of hardcoding format string
         writer.write(generate_include("{}Listener.hpp".format(class_desc.name())))
+        writer.write(generate_include("{}Recorder.hpp".format(class_desc.name())))
 
         # write include for vector, which is needed for listeners
         # TODO: only generate include of vector when needed
