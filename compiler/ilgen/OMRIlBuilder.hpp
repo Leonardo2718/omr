@@ -59,6 +59,83 @@ namespace OMR
 
 typedef TR::ILOpCodes (*OpCodeMapper)(TR::DataType);
 
+class IlBuilder;
+
+/**
+ * @brief A class encapsulating the information needed for a switch-case
+ *
+ * This class encapsulates the different pieces needed to construct a Case
+ * for IlBuilder's Switch() service. It's constructor is private, so instances
+ * can only be created by calling IlBuilder::MakeCase().
+ */
+class JBCase
+   {
+   public:
+      void * client();
+      void setClient(void * client) { _client = client; }
+      static void setClientAllocator(ClientAllocator allocator) { _clientAllocator = allocator; }
+      static void setGetImpl(ImplGetter getter) { _getImpl = getter; }
+
+      /**
+       * @brief Construct a new JBCase object.
+       *
+       * This constructor should not be called directly outside of this classs.
+       * A call to `MakeCase()` should be used instead.
+       *
+       * @param v the value matched by the case
+       * @param b the builder implementing the case body
+       * @param f whether the case falls-through or not
+       */
+      JBCase(int32_t v, TR::IlBuilder *b, int32_t f)
+            : _value(v), _builder(b), _fallsThrough(f), _client(NULL) {}
+
+   private:
+      int32_t _value;          // value matched by the case
+      TR::IlBuilder *_builder; // builder for the case body
+      int32_t _fallsThrough;   // whether the case falls-through
+      void * _client;
+      static ClientAllocator _clientAllocator;
+      static ImplGetter _getImpl;
+
+      friend class OMR::IlBuilder;
+   };
+
+/**
+ * @brief A class encapsulating the information needed for IfAnd and IfOr.
+ *
+ * This class encapsulates the value of the condition and the builder
+ * object used generate the value (used to evaluate the condition).
+ */
+class JBCondition
+   {
+   public:
+      void * client();
+      void setClient(void * client) { _client = client; }
+      static void setClientAllocator(ClientAllocator allocator) { _clientAllocator = allocator; }
+      static void setGetImpl(ImplGetter getter) { _getImpl = getter; }
+
+      /**
+       * @brief Construct a new JBCondition object.
+       *
+       * This constructor should not be called directly outside of the JitBuilder
+       * implementation. A call to `MakeCondition()` should be used instead.
+       *
+       * @param conditionBuilder pointer to the builder used to generate the condition value
+       * @param conditionValue the IlValue representing value for the condition
+       */
+      JBCondition(TR::IlBuilder *conditionBuilder, TR::IlValue *conditionValue)
+         : _builder(conditionBuilder), _condition(conditionValue), _client(NULL) {}
+
+   private:
+      TR::IlBuilder *_builder; // builder used to generate the condition value
+      TR::IlValue *_condition; // value for the condition
+      void * _client;
+      static ClientAllocator _clientAllocator;
+      static ImplGetter _getImpl;
+
+      friend class OMR::IlBuilder;
+   };
+
 class IlBuilder : public TR::IlInjector
    {
 
@@ -91,81 +168,6 @@ protected:
 
 public:
    TR_ALLOC(TR_Memory::IlGenerator)
-
-   /**
-    * @brief A class encapsulating the information needed for a switch-case
-    *
-    * This class encapsulates the different pieces needed to construct a Case
-    * for IlBuilder's Switch() service. It's constructor is private, so instances
-    * can only be created by calling IlBuilder::MakeCase().
-    */
-   class JBCase
-      {
-      public:
-         void * client();
-         void setClient(void * client) { _client = client; }
-         static void setClientAllocator(ClientAllocator allocator) { _clientAllocator = allocator; }
-         static void setGetImpl(ImplGetter getter) { _getImpl = getter; }
-
-         /**
-          * @brief Construct a new JBCase object.
-          *
-          * This constructor should not be called directly outside of this classs.
-          * A call to `MakeCase()` should be used instead.
-          *
-          * @param v the value matched by the case
-          * @param b the builder implementing the case body
-          * @param f whether the case falls-through or not
-          */
-         JBCase(int32_t v, TR::IlBuilder *b, int32_t f)
-             : _value(v), _builder(b), _fallsThrough(f), _client(NULL) {}
-
-      private:
-         int32_t _value;          // value matched by the case
-         TR::IlBuilder *_builder; // builder for the case body
-         int32_t _fallsThrough;   // whether the case falls-through
-         void * _client;
-         static ClientAllocator _clientAllocator;
-         static ImplGetter _getImpl;
-
-         friend class OMR::IlBuilder;
-      };
-
-   /**
-    * @brief A class encapsulating the information needed for IfAnd and IfOr.
-    *
-    * This class encapsulates the value of the condition and the builder
-    * object used generate the value (used to evaluate the condition).
-    */
-   class JBCondition
-      {
-      public:
-         void * client();
-         void setClient(void * client) { _client = client; }
-         static void setClientAllocator(ClientAllocator allocator) { _clientAllocator = allocator; }
-         static void setGetImpl(ImplGetter getter) { _getImpl = getter; }
-
-         /**
-          * @brief Construct a new JBCondition object.
-          *
-          * This constructor should not be called directly outside of the JitBuilder
-          * implementation. A call to `MakeCondition()` should be used instead.
-          *
-          * @param conditionBuilder pointer to the builder used to generate the condition value
-          * @param conditionValue the IlValue representing value for the condition
-          */
-         JBCondition(TR::IlBuilder *conditionBuilder, TR::IlValue *conditionValue)
-            : _builder(conditionBuilder), _condition(conditionValue), _client(NULL) {}
-
-      private:
-         TR::IlBuilder *_builder; // builder used to generate the condition value
-         TR::IlValue *_condition; // value for the condition
-         void * _client;
-         static ClientAllocator _clientAllocator;
-         static ImplGetter _getImpl;
-
-         friend class OMR::IlBuilder;
-      };
 
    friend class OMR::MethodBuilder;
 
@@ -752,5 +754,11 @@ protected:
    };
 
 } // namespace OMR
+
+namespace TR
+   {
+   typedef OMR::JBCase JBCase;
+   typedef OMR::JBCondition JBCondition;
+   }
 
 #endif // !defined(OMR_ILBUILDER_INCL)

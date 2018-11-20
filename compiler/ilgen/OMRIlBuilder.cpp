@@ -1642,7 +1642,7 @@ OMR::IlBuilder::IfAnd(TR::IlBuilder **allTrueBuilder, TR::IlBuilder **anyFalseBu
  * @param anyFalseBuilder builder containing operations to execute if any conditional test
  *        is false (automatically allocated if pointed-to pointer is null)
  * @param numTerms the number of conditional terms
- * @param ... for each term, provide a TR::IlBuilder::JBCondition object for the condition
+ * @param ... for each term, provide a TR::JBCondition object for the condition
  *
  * Example:
  * TR::IlBuilder *cond1Builder = OrphanBuilder();
@@ -1739,7 +1739,7 @@ OMR::IlBuilder::IfOr(TR::IlBuilder **anyTrueBuilder, TR::IlBuilder **allFalseBui
  * @param allFalseBuilder builder containing operations to execute if all conditional
  *        tests are false (automatically allocated if pointed-to pointer is null)
  * @param numTerms the number of conditional terms
- * @param ... for each term, provide a TR::IlBuilder::JBCondition object for the condition
+ * @param ... for each term, provide a TR::JBCondition object for the condition
  *
  * Example:
  * TR::IlBuilder *cond1Builder = OrphanBuilder();
@@ -1770,7 +1770,7 @@ OMR::IlBuilder::IfOr(TR::IlBuilder **anyTrueBuilder, TR::IlBuilder **allFalseBui
    IfOr(anyTrueBuilder, allFalseBuilder, numTerms, terms);
    }
 
-TR::IlBuilder::JBCondition *
+TR::JBCondition *
 OMR::IlBuilder::MakeCondition(TR::IlBuilder *conditionBuilder, TR::IlValue *conditionValue)
    {
    TR_ASSERT(conditionBuilder != NULL, "MakeCondition needs to have non-null conditionBuilder");
@@ -2591,7 +2591,7 @@ OMR::IlBuilder::Switch(const char *selectionVar,
    AppendBuilder(breakBuilder);
    }
 
-TR::IlBuilder::JBCase *
+TR::JBCase *
 OMR::IlBuilder::MakeCase(int32_t caseValue, TR::IlBuilder **caseBuilder, int32_t caseFallsThrough)
    {
    TR_ASSERT(caseBuilder != NULL, "MakeCase, needs to have non-null caseBuilder");
@@ -2765,24 +2765,24 @@ OMR::IlBuilder::client()
    }
 
 void *
-OMR::IlBuilder::JBCase::client()
+OMR::JBCase::client()
    {
    if (_client == NULL && _clientAllocator != NULL)
-      _client = _clientAllocator(static_cast<TR::IlBuilder::JBCase *>(this));
+      _client = _clientAllocator(static_cast<TR::JBCase *>(this));
    return _client;
    }
 
 void *
-OMR::IlBuilder::JBCondition::client()
+OMR::JBCondition::client()
    {
    if (_client == NULL && _clientAllocator != NULL)
-      _client = _clientAllocator(static_cast<TR::IlBuilder::JBCondition *>(this));
+      _client = _clientAllocator(static_cast<TR::JBCondition *>(this));
    return _client;
    }
 
 ClientAllocator OMR::IlBuilder::_clientAllocator = NULL;
 ClientAllocator OMR::IlBuilder::_getImpl = NULL;
-ClientAllocator OMR::IlBuilder::JBCase::_clientAllocator = NULL;
-ClientAllocator OMR::IlBuilder::JBCase::_getImpl = NULL;
-ClientAllocator OMR::IlBuilder::JBCondition::_clientAllocator = NULL;
-ClientAllocator OMR::IlBuilder::JBCondition::_getImpl = NULL;
+ClientAllocator OMR::JBCase::_clientAllocator = NULL;
+ClientAllocator OMR::JBCase::_getImpl = NULL;
+ClientAllocator OMR::JBCondition::_clientAllocator = NULL;
+ClientAllocator OMR::JBCondition::_getImpl = NULL;
