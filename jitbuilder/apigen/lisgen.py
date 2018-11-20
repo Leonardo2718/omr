@@ -57,7 +57,10 @@ def write_class_listener(writer, class_desc):
     Write the interface defintion for a class listener.
     """
 
-    writer.write("class {} {{\n".format(generate_listener_class_name(class_desc)))
+    if class_desc.has_parent():
+        writer.write("class {}: public {} {{\n".format(generate_listener_class_name(class_desc), generate_listener_class_name(class_desc.parent())))
+    else:
+        writer.write("class {} {{\n".format(generate_listener_class_name(class_desc)))
     writer.write("public:\n")
 
     for service in class_desc.services():
@@ -101,10 +104,11 @@ def write_listener_header(writer, class_desc, namespaces):
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
-    # TODO: don't reach into `api` field of class description
     writer.write("// forward declarations for all API classes\n")
-    for c in class_desc.api.get_class_names():
-        writer.write("class {};\n".format(c))
+    for c in class_desc.api.classes():
+        writer.write("class {};\n".format(c.name()))
+        for c_ in c.inner_classes():
+            writer.write("class {};\n".format(c_.name()))
     writer.write("\n")
 
     write_class_listener(writer, class_desc)
@@ -128,6 +132,21 @@ def generate_recorder_service_decl(service):
     parms = cppgen.generate_parm_list(service.parameters())
     return 'virtual void {}({});\n'.format(name, parms)
 
+def collect_services(class_desc):
+    services = class_desc.services()
+    services += class_desc.callbacks()
+    if class_desc.has_parent():
+        services += collect_services(class_desc.parent())
+    return services
+
+def write_recorder_service_decls(writer, class_desc):
+    for service in class_desc.services():
+        writer.write(generate_recorder_service_decl(service))
+    for service in class_desc.callbacks():
+        writer.write(generate_recorder_service_decl(service))
+    if class_desc.has_parent():
+        write_recorder_service_decls(writer, class_desc.parent())
+
 def write_recorder_class_def(writer, class_desc):
     """
     Write recorder class defintion.
@@ -136,10 +155,15 @@ def write_recorder_class_def(writer, class_desc):
     writer.write("class {}: public {} {{\n".format(generate_recorder_name(class_desc), generate_listener_class_name(class_desc)))
     writer.write("public:\n")
 
-    for service in class_desc.services():
-        writer.write(generate_recorder_service_decl(service))
-    for service in class_desc.callbacks():
-        writer.write(generate_recorder_service_decl(service))
+    # write_recorder_service_decls(writer, class_desc)
+    services_ = collect_services(class_desc)
+    services = []
+    for s in services_:
+        if s not in services:
+            services.append(s) 
+    for s in services:
+        writer.write(generate_recorder_service_decl(s))
+    writer.write("\n")
 
     # TODO: don't hard code the acceptors, traverse the class description heirarchy
     #       instead and find all the classes than need an acceptor
@@ -153,7 +177,7 @@ def write_recorder_header(writer, class_desc, namespaces):
     """
     Write header file for recorder.
     """
-    guard_name = generate_listener_class_name(class_desc).upper() + "_INCL"
+    guard_name = generate_recorder_name(class_desc).upper() + "_INCL"
 
     writer.write("#ifndef {}\n".format(guard_name))
     writer.write("#define {}\n".format(guard_name))
@@ -165,8 +189,10 @@ def write_recorder_header(writer, class_desc, namespaces):
 
     # TODO: don't reach into `api` field of class description
     writer.write("// forward declarations for all API classes\n")
-    for c in class_desc.api.get_class_names():
-        writer.write("class {};\n".format(c))
+    for c in class_desc.api.classes():
+        writer.write("class {};\n".format(c.name()))
+        for c_ in c.inner_classes():
+            writer.write("class {};\n".format(c_.name()))
     writer.write("\n")
 
     write_recorder_class_def(writer, class_desc)
@@ -177,21 +203,29 @@ def write_recorder_header(writer, class_desc, namespaces):
 
     writer.write("#endif // {}\n".format(guard_name))
 
-def write_recorder_service_def(writer, service):
+def write_recorder_service_def(writer, cname, service):
     """
     Write the definition of a service (method) of a recorder.
     """
     name = service.name()
     parms = cppgen.generate_parm_list(service.parameters())
-    writer.write('void {}({}) {{ std::cout << "{}\\n" }}\n'.format(name, parms, name))
+    writer.write('void {}::{}({}) {{ std::cout << "{}\\n"; }}\n'.format(cname, name, parms, name))
 
-def write_recorder_source(writer, class_desc, namespaces):
+def write_recorder_service_defs(writer, cname, class_desc):
+    for service in class_desc.services():
+        write_recorder_service_def(writer, cname + "Recorder", service)
+    for service in class_desc.callbacks():
+        write_recorder_service_def(writer, cname + "Recorder", service)
+    if class_desc.has_parent():
+        write_recorder_service_defs(writer, cname, class_desc.parent())
+
+def write_recorder_source(writer, headerdir, class_desc, namespaces):
     for f in cppgen.impl_include_files:
         writer.write(cppgen.generate_include(f))
     # TODO: don't hardcode includes
-    writer.write(cppgen.generate_include("IlBuilderRecorder.hpp"))
-    writer.write(cppgen.generate_include("BytecodeBuilderRecorder.hpp"))
-    writer.write(cppgen.generate_include("MethodBuilderRecorder.hpp"))
+    writer.write(cppgen.generate_include(os.path.join(headerdir, "IlBuilderRecorder.hpp")))
+    writer.write(cppgen.generate_include(os.path.join(headerdir, "BytecodeBuilderRecorder.hpp")))
+    writer.write(cppgen.generate_include(os.path.join(headerdir, "MethodBuilderRecorder.hpp")))
     writer.write("#include <iostream>\n")
     writer.write("\n")
 
@@ -199,16 +233,20 @@ def write_recorder_source(writer, class_desc, namespaces):
         writer.write("namespace {} {{\n".format(n))
     writer.write("\n")
 
-    for service in class_desc.services():
-        write_recorder_service_def(writer, service)
-    for service in class_desc.callbacks():
-        write_recorder_service_def(writer, service)
+    # write_recorder_service_defs(writer, class_desc.name(), class_desc)
+    services_ = collect_services(class_desc)
+    services = []
+    for s in services_:
+        if s not in services:
+            services.append(s) 
+    for s in services:
+        write_recorder_service_def(writer, class_desc.name() + "Recorder", s)
 
     # TODO: don't hard code the acceptors, traverse the class description heirarchy
     #       instead and find all the classes than need an acceptor
-    writer.write("bool cloneInto(IlBuilder * b) { b->register(new IlBuilderRecorder()); return true; }\n")
-    writer.write("bool cloneInto(BytecodeBuilder * b) { b->register(new BytecodeBuilderRecorder()); return true; }\n")
-    writer.write("bool cloneInto(MethodBuilder * b) { b->register(new MethodBuilderRecorder()); return true; }\n")
+    writer.write("bool "+class_desc.name()+"Recorder::cloneInto(IlBuilder * b) { b->RegisterListener(new IlBuilderRecorder()); return true; }\n")
+    writer.write("bool "+class_desc.name()+"Recorder::cloneInto(BytecodeBuilder * b) { b->RegisterListener(new BytecodeBuilderRecorder()); return true; }\n")
+    writer.write("bool "+class_desc.name()+"Recorder::cloneInto(MethodBuilder * b) { b->RegisterListener(new MethodBuilderRecorder()); return true; }\n")
 
     for n in namespaces:
         writer.write("}} // namespace {}\n".format(n))
@@ -249,8 +287,8 @@ if __name__ == "__main__":
             with open(os.path.join(args.headerdir, fname), "w") as writer:
                 write_recorder_header(writer, class_desc, namespaces)
             fname = generate_recorder_name(class_desc) + ".cpp"
-            with open(os.path.join(args.headerdir, fname), "w") as writer:
-                write_recorder_source(writer, class_desc, namespaces)
+            with open(os.path.join(args.sourcedir, fname), "w") as writer:
+                write_recorder_source(writer, args.headerdir, class_desc, namespaces)
 
     for class_desc in api_description.classes():
         cppgen.write_class(args.headerdir, args.sourcedir, class_desc, namespaces, class_names)
