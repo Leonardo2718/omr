@@ -516,14 +516,6 @@ def write_class_service_impl(writer, desc, class_desc):
         # TODO: don't hardcode class names, check class description property instead
         ilbuilder_classes =  ["IlBuilder", "BytecodeBuilder", "MethodBuilder"]
 
-        # write for loop to notify listeners of called service
-        # TODO: don't hardcode class names, check class description property instead
-        if class_desc.name() in ilbuilder_classes:
-            # TODO: don't hardcode name `listeners`
-            writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
-            writer.write("   listeners[i]->{}({});\n".format(desc.name(), ", ".join([a.name() for a in desc.parameters()])))
-            writer.write("}\n")
-
         for parm in desc.parameters():
             write_arg_setup(writer, parm)
 
@@ -531,6 +523,15 @@ def write_class_service_impl(writer, desc, class_desc):
         impl_call = "{impl_cast}->{sname}({args})".format(impl_cast=to_impl_cast(class_desc,"_impl"),sname=name,args=args)
         if "none" == desc.return_type().name():
             writer.write(impl_call + ";\n")
+
+            # write for loop to notify listeners of called service
+            # TODO: don't hardcode class names, check class description property instead
+            if class_desc.name() in ilbuilder_classes:
+                # TODO: don't hardcode name `listeners`
+                writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
+                writer.write("   listeners[i]->{}({});\n".format(desc.name(), ", ".join([a.name() for a in desc.parameters()])))
+                writer.write("}\n")
+
             for parm in desc.parameters():
                 write_arg_return(writer, parm)
 
@@ -545,6 +546,24 @@ def write_class_service_impl(writer, desc, class_desc):
                     writer.write("}\n")
         elif desc.return_type().is_class():
             writer.write("{rtype} implRet = {call};\n".format(rtype=get_impl_type(desc.return_type()), call=impl_call))
+            writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type().name()))
+
+            # write for loop to notify listeners of called service
+            #
+            # Note that it's important for listener notification to happen *after* the
+            # impl method has been called but *before* any of the in-out/array arguments
+            # are setup for return. This ensures that when the listeners are notified,
+            # both the original argument values and the return value are available and
+            # can be passed to the listener.
+            # 
+            # TODO: don't hardcode class names, check class description property instead
+            if class_desc.name() in ilbuilder_classes:
+                # TODO: don't hardcode name `listeners`
+                writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
+                parms = list_str_prepend("clientObj", ", ".join([a.name() for a in desc.parameters()]))
+                writer.write("   listeners[i]->{}({});\n".format(desc.name(), parms))
+                writer.write("}\n")
+
             for parm in desc.parameters():
                 write_arg_return(writer, parm)
 
@@ -557,7 +576,6 @@ def write_class_service_impl(writer, desc, class_desc):
                     writer.write("    listeners[i]->cloneInto(*{});\n".format(parm.name()))
                     writer.write("  }\n")
                     writer.write("}\n")
-            writer.write("GET_CLIENT_OBJECT(clientObj, {t}, implRet);\n".format(t=desc.return_type().name()))
             # TODO: don't use `ilbuilder_classes`, check class description property instead
             # TODO: don't hardcode name `listeners`
             if desc.return_type().name() in ilbuilder_classes:
@@ -569,6 +587,23 @@ def write_class_service_impl(writer, desc, class_desc):
             writer.write("return clientObj;\n")
         else:
             writer.write("auto ret = " + impl_call + ";\n")
+
+            # write for loop to notify listeners of called service
+            #
+            # Note that it's important for listener notification to happen *after* the
+            # impl method has been called but *before* any of the in-out/array arguments
+            # are setup for return. This ensures that when the listeners are notified,
+            # both the original argument values and the return value are available and
+            # can be passed to the listener.
+            # 
+            # TODO: don't hardcode class names, check class description property instead
+            if class_desc.name() in ilbuilder_classes:
+                # TODO: don't hardcode name `listeners`
+                writer.write("for (int i = 0; i < listeners.size(); ++i) {\n")
+                parms = list_str_prepend("ret", ", ".join([a.name() for a in desc.parameters()]))
+                writer.write("   listeners[i]->{}({});\n".format(desc.name(), parms))
+                writer.write("}\n")
+
             for parm in desc.parameters():
                 write_arg_return(writer, parm)
 
