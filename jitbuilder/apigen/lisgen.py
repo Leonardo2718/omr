@@ -43,13 +43,30 @@ def is_ilbuilder(c):
 def generate_listener_class_name(class_desc):
     return class_desc.name() + "Listener"
 
+# TODO: find better word than "message"
+def generate_listener_message_parm_list(service):
+    """
+    Generate a list of parameter for a listener message (member function).
+
+    If the event corresponding to the message has some result or return
+    value, a parameter is created for that value and preprended to the
+    list of parameters
+    """
+    service_parms = cppgen.generate_parm_list(service.parameters())
+    if service.return_type().is_none():
+        return service_parms
+    else:
+        # TODO: find better parameter name than "retVal"
+        ret_parm = "{} retVal".format(cppgen.get_client_type(service.return_type()))
+        return list_str_prepend(ret_parm, service_parms)
+
 def generate_listener_service(service):
     """
     Generate a string for the declaration of a service (method)
     as a listener.
     """
     name = service.name()
-    parms = cppgen.generate_parm_list(service.parameters())
+    parms = generate_listener_message_parm_list(service)
     return "virtual void {}({}) {{}}\n".format(name, parms)
 
 def write_class_listener(writer, class_desc):
@@ -156,7 +173,7 @@ def generate_recorder_service_decl(service):
     Write the declaraion of a service (method) of a recorder.
     """
     name = service.name()
-    parms = cppgen.generate_parm_list(service.parameters())
+    parms = generate_listener_message_parm_list(service)
     return 'virtual void {}({});\n'.format(name, parms)
 
 def write_recorder_class_def(writer, class_desc):
@@ -222,7 +239,7 @@ def write_recorder_service_def(writer, cname, service):
     Write the definition of a service (method) of a recorder.
     """
     name = service.name()
-    parms = cppgen.generate_parm_list(service.parameters())
+    parms = generate_listener_message_parm_list(service)
     writer.write('void {}::{}({}) {{ std::cout << "{}\\n"; }}\n'.format(cname, name, parms, name))
 
 def write_recorder_source(writer, headerdir, class_desc, namespaces):
