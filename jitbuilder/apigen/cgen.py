@@ -27,8 +27,6 @@ A module for generating the JitBuilder C client API.
 """
 
 import os
-# import datetime
-# import json
 import shutil
 import argparse
 import cppgen
@@ -62,17 +60,6 @@ class CGenerator(cppgen.CppGenerator):
     def get_self_arg(self, service):
         return "self"
 
-    # header utilities ###################################################
-
-    def generate_field_decl(self, field, with_visibility = False):
-        """
-        Produces the declaration of a client API field from
-        its description, specifying its visibility as required.
-        """
-        t = self.get_client_type(field.type())
-        n = field.name()
-        return "{type} {name};\n".format(type=t, name=n)
-
     def generate_service_parms(self, service):
         """
         Produces a stringified, comma separated list of parameter
@@ -86,6 +73,59 @@ class CGenerator(cppgen.CppGenerator):
         declarations for a service.
         """
         return genutils.list_str_prepend(self.get_self_parm(service), self.generate_vararg_parm_list(service.parameters()))
+
+
+    def get_service_call_name(self, service, owner=None):
+        """
+        Produces the full name of a service usable as a call.
+        """
+        owner = owner if owner is not None else service.owning_class()
+        prefix = "{}_".format(owner.short_name()) if owner is not None else ""
+        return "{prefix}{name}".format(prefix=prefix, name=service.name())
+
+    def get_service_decl_name(self, service, owner=None):
+        """
+        Produces the full name of a service for use in a function declarations.
+        """
+        # in C, we can use the same name as in a function call
+        return self.get_service_call_name(service, owner)
+
+    def get_service_impl_name(self, service, owner=None):
+        """
+        Produces the full name of a service for use in a function definition.
+        """
+        # in C, we can use the same name as in a function call
+        return self.get_service_call_name(service, owner)
+
+    def generate_get_client_field(self, name):
+        """
+        Produces a string that "gets" a field with name 'name' from a client class.
+        """
+        return "self->{}".format(name)
+
+    def get_class_inititializer(self, class_desc):
+        """
+        Produces a description of a service to initialize an instance of a client API class.
+        """
+        init_service = {
+            "name":"initializeFromImpl",
+            "overloadsuffix": "",
+            "flags": "",
+            "return": "none",
+            "parms": [ {"name":"impl","type":"pointer"} ]
+        }
+        return genutils.APIService(init_service, class_desc, class_desc.api)
+
+    # header utilities ###################################################
+
+    def generate_field_decl(self, field, with_visibility = False):
+        """
+        Produces the declaration of a client API field from
+        its description, specifying its visibility as required.
+        """
+        t = self.get_client_type(field.type())
+        n = field.name()
+        return "{type} {name};\n".format(type=t, name=n)
 
     def generate_service_args(self, service):
         """
@@ -102,13 +142,13 @@ class CGenerator(cppgen.CppGenerator):
         vis = service.visibility() + ": "
         ret = self.get_client_type(service.return_type())
         class_prefix = service.owning_class().short_name()
-        name = service.name()
+        name = self.get_service_decl_name(service)
         parms = self.generate_service_parms(service)
 
-        decl = "{rtype} {cprefix}_{name}({parms});\n".format(rtype=ret, cprefix=class_prefix, name=name, parms=parms)
+        decl = "{rtype} {name}({parms});\n".format(rtype=ret, name=name, parms=parms)
         if service.is_vararg():
             parms = self.generate_service_vararg_parms(service)
-            decl = decl + "{rtype} {cprefix}_{name}_v({parms});\n".format(rtype=ret, cprefix=class_prefix, name=name,parms=parms)
+            decl = decl + "{rtype} {name}_v({parms});\n".format(rtype=ret, name=name, parms=parms)
 
         return decl
 
@@ -209,6 +249,115 @@ class CGenerator(cppgen.CppGenerator):
         writer.write("\n")
 
         writer.write("#endif // {}_INCL\n".format(class_desc.name()))
+
+    # source utilities ###################################################
+
+    def write_impl_initializer(self, writer, class_desc):
+        """
+        Writes the implementation of the client API class common
+        initialization function from the description of a class.
+
+        The common initialization function is called by all client
+        API class constructors to initialize the class's fields,
+        including the private pointer to the corresponding
+        implementation object. It is also used to set any callbacks
+        to the client on the implementation object.
+        """
+
+        init_service = self.get_class_inititializer(class_desc)
+        writer.write("void {name}({parms}) {{\n".format(name=self.get_service_impl_name(init_service), parms=self.generate_service_parms(init_service)))
+
+        full_name = self.get_class_name(class_desc)
+        impl_cast = self.to_impl_cast(class_desc,"impl")
+
+        if class_desc.has_parent():
+            name = self.get_service_call_name(self.get_class_inititializer(class_desc.parent()))
+            parms = genutils.list_str_prepend(self.generate_get_client_field("super"), "impl")
+            writer.write("{name}({parms});\n".format(name=name, parms=parms))
+        else:
+            writer.write("{} = impl;\n".format(self.generate_get_client_field("_impl")))
+
+        for field in class_desc.fields():
+            fmt = "GET_CLIENT_OBJECT(clientObj_{fname}, {ftype}, {impl_cast}->{fname});\n"
+            writer.write(fmt.format(fname=field.name(), ftype=field.type().name(), impl_cast=impl_cast))
+            writer.write("{field} = clientObj_{fname};\n".format(field=self.generate_get_client_field(field.name()), fname=field.name()))
+
+        for callback in class_desc.callbacks():
+            fmt = "{impl_cast}->{registrar}(reinterpret_cast<void*>(&{thunk}));\n"
+            registrar = genutils.callback_setter_name(callback)
+            thunk = self.callback_thunk_name(class_desc, callback)
+            writer.write(fmt.format(impl_cast=impl_cast,registrar=registrar,thunk=thunk))
+
+        # write setting of the impl getter
+        impl_getter = self.impl_getter_name(class_desc)
+        writer.write("{impl_cast}->setGetImpl(&{impl_getter});\n".format(impl_cast=impl_cast,impl_getter=impl_getter))
+
+        writer.write("}\n")
+
+    def write_class_impl(self, writer, class_desc):
+        """Write the implementation of a client API class."""
+
+        name = class_desc.name()
+        full_name = self.get_class_name(class_desc)
+
+        # write source for inner classes first
+        for c in class_desc.inner_classes():
+            self.write_class_impl(writer, c)
+
+        # write callback thunk definitions
+        for callback in class_desc.callbacks():
+            self.write_callback_thunk(writer, class_desc, callback)
+            writer.write("\n")
+
+        # write impl getter defintion
+        self.write_impl_getter_impl(writer, class_desc)
+        writer.write("\n")
+
+        # write constructor definitions
+        for ctor in class_desc.constructors():
+            self.write_ctor_impl(writer, ctor)
+        writer.write("\n")
+
+        self.write_impl_ctor_impl(writer, class_desc)
+        writer.write("\n")
+
+        # write class initializer (called from all constructors)
+        self.write_impl_initializer(writer, class_desc)
+        writer.write("\n")
+
+        # write destructor definition
+        # writer.write("{cname}::~{name}() {{}}\n".format(cname=full_name,name=name))
+        # writer.write("\n")
+
+        # write service definitions
+        for s in class_desc.services():
+            self.write_class_service_impl(writer, s, class_desc)
+            writer.write("\n")
+
+        # write service definitions
+        for s in class_desc.callbacks():
+            self.write_class_service_impl(writer, s, class_desc)
+            writer.write("\n")
+
+        self.write_allocator_impl(writer, class_desc)
+        writer.write("\n")
+
+    def write_class_source(self, writer, class_desc, namespaces, class_names):
+        """
+        Writes the implementation (source) for a client API class
+        from the class description.
+        """
+        writer.write(self.get_copyright_header())
+        writer.write("\n")
+
+        # don't bother checking what headers are needed, include everything
+        for h in self.impl_include_files:
+            writer.write(self.generate_include(h))
+        writer.write("\n")
+
+        self.write_class_impl(writer, class_desc)
+
+    # common utilities ###################################################
 
     def write_class(self, header_dir, source_dir, class_desc, namespaces, class_names):
         """Generates and writes a client API class from its description."""
