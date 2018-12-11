@@ -43,6 +43,17 @@ import sys
 import json
 from functools import reduce
 
+if sys.version_info >= (3,0):
+    str_t = str
+else:
+    str_t = basestring
+
+try:
+    from typing import List, Dict, Union, Any
+    JSONType = Union[str_t, List[Any], Dict[str_t, Any]]
+except ImportError as e:
+    print("Warning: 'typing' package is not installed in the current Python environment.\nType checking will not work.")
+
 # API description wrappers
 
 class APIType:
@@ -361,27 +372,30 @@ class APIDescription:
         return APIDescription(json.load(desc))
 
     def __init__(self, description):
+        # type: (Dict[str_t, JSONType]) -> None
         self.description = description
 
         # table mapping class names to class descriptions
-        self.class_table = {}
+        self.class_table = {} # type: Dict[str_t, APIClass]
         self.__init_class_table(self.class_table, self.classes())
 
         # table of classes and their contained classes
-        self.containing_table = {}
+        self.containing_table = {} # type: Dict[str_t, List[str_t]]
         self.__init_containing_table(self.containing_table, self.classes())
 
         # table of base-classes
-        self.inheritance_table = {}
+        self.inheritance_table = {} # type: Dict[str_t, APIClass]
         self.__init_inheritance_table(self.inheritance_table, self.classes())
 
     def __init_class_table(self, table, cs):
+        # type: (Dict[str_t, APIClass], List[APIClass]) -> None
         """Generates a dictionary from class names class descriptions."""
         for c in cs:
             table[c.name()] = c
             self.__init_class_table(table, c.inner_classes())
 
     def __init_containing_table(self, table, cs, outer_classes=[]):
+        # type: (Dict[str_t, List[str_t]], List[APIClass], List[str_t]) -> None
         """
         Generates a dictionary from class names to complete class names
         that include the names of containing classes from a list of
@@ -392,6 +406,7 @@ class APIDescription:
             table[c.name()] = outer_classes
 
     def __init_inheritance_table(self, table, cs):
+        # type: (Dict[str_t, APIClass], List[APIClass]) -> None
         """
         Generates a dictionary from class names to base-class names
         from a list of API class descriptions.
@@ -407,22 +422,35 @@ class APIDescription:
         return not (self == other)
 
     def project(self):
+        # type: () -> str_t
         """Returns the name of the project the API is for."""
-        return self.description["project"]
+        p = self.description["project"]
+        assert isinstance(p, str_t)
+        return p
 
     def namespaces(self):
+        # type: () -> List[str_t]
         """Returns the namespace that the API is in."""
-        return self.description["namespace"]
+        ns = self.description["namespace"]
+        assert isinstance(ns, list)
+        return ns
 
     def classes(self):
+        # type: () -> List[APIClass]
         """Returns a list of all the top-level classes defined in the API."""
-        return [APIClass(c, self) for c in self.description["classes"]]
+        classes = self.description["classes"]
+        assert isinstance(classes, list)
+        return [APIClass(c, self) for c in classes]
 
     def services(self):
+        # type: () -> List[APIService]
         """Returns a list of all the top-level services defined in the API."""
-        return [APIService(s, None, self) for s in self.description["services"]]
+        services = self.description["services"]
+        assert isinstance(services, list)
+        return [APIService(s, None, self) for s in services]
 
     def get_class_names(self):
+        # type: () -> List[str_t]
         """Retruns a list of the names of all the top-level classes defined in the API."""
         return [c.name() for c in self.classes()]
 
