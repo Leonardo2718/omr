@@ -350,7 +350,7 @@ public:
 
    void releaseCandidates() {
      _candidateRegion.~Region();
-     new (_candidateRegion) TR::Region(_trMemory->heapMemoryRegion());
+     new (static_cast<void *>(&_candidateRegion)) TR::Region(_trMemory->heapMemoryRegion());
    }
 
    void collectCfgProperties(TR::Block **, int32_t);
