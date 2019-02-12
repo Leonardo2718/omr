@@ -137,6 +137,10 @@ class lBitPermuteTest : public BitPermuteTest<uint64_t> {};
 
 TEST_P(lBitPermuteTest, ConstAddressLengthTest)
    {
+   std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
+
    auto param = to_struct(GetParam());
 
    char inputTrees[512] = {0};
@@ -169,6 +173,10 @@ TEST_P(lBitPermuteTest, ConstAddressLengthTest)
 
 TEST_P(lBitPermuteTest, ConstAddressTest)
    {
+   std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
+
    auto param = to_struct(GetParam());
 
    char inputTrees[512] = {0};
@@ -200,6 +208,10 @@ TEST_P(lBitPermuteTest, ConstAddressTest)
 
 TEST_P(lBitPermuteTest, NoConstTest)
    {
+   std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
+
    auto param = to_struct(GetParam());
 
    char inputTrees[512] = {0};
@@ -232,6 +244,10 @@ class iBitPermuteTest : public BitPermuteTest<uint32_t> {};
 
 TEST_P(iBitPermuteTest, ConstAddressLengthTest)
    {
+   std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
+
    auto param = to_struct(GetParam());
 
    uint8_t maskedIndices[32];
@@ -268,6 +284,10 @@ TEST_P(iBitPermuteTest, ConstAddressLengthTest)
 
 TEST_P(iBitPermuteTest, ConstAddressTest)
    {
+   std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
+
    auto param = to_struct(GetParam());
 
    uint8_t maskedIndices[32];
@@ -303,6 +323,10 @@ TEST_P(iBitPermuteTest, ConstAddressTest)
 
 TEST_P(iBitPermuteTest, NoConstTest)
    {
+   std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
+
    auto param = to_struct(GetParam());
 
    uint8_t maskedIndices[32];
@@ -340,6 +364,8 @@ class sBitPermuteTest : public BitPermuteTest<uint16_t> {};
 TEST_P(sBitPermuteTest, ConstAddressLengthTest)
    {
    std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
    SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
       << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
    auto param = to_struct(GetParam());
@@ -380,6 +406,8 @@ TEST_P(sBitPermuteTest, ConstAddressLengthTest)
 TEST_P(sBitPermuteTest, ConstAddressTest)
    {
    std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
    SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
       << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
    auto param = to_struct(GetParam());
@@ -419,6 +447,8 @@ TEST_P(sBitPermuteTest, ConstAddressTest)
 TEST_P(sBitPermuteTest, NoConstTest)
    {
    std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
    SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
       << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
    auto param = to_struct(GetParam());
@@ -459,6 +489,8 @@ class bBitPermuteTest : public BitPermuteTest<uint8_t> {};
 TEST_P(bBitPermuteTest, ConstAddressLengthTest)
    {
    std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
    SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
       << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
    auto param = to_struct(GetParam());
@@ -499,6 +531,8 @@ TEST_P(bBitPermuteTest, ConstAddressLengthTest)
 TEST_P(bBitPermuteTest, ConstAddressTest)
    {
    std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
    SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
       << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
    auto param = to_struct(GetParam());
@@ -538,6 +572,8 @@ TEST_P(bBitPermuteTest, ConstAddressTest)
 TEST_P(bBitPermuteTest, NoConstTest)
    {
    std::string arch = omrsysinfo_get_CPU_architecture();
+   SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, MissingImplementation)
+      << "Bit permute opcodes are not implemented on Power";
    SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
       << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
    auto param = to_struct(GetParam());
@@ -573,7 +609,6 @@ TEST_P(bBitPermuteTest, NoConstTest)
       entry_point(param.variableValue, maskedIndices, param.arrayLength));
    }
 
-#if defined (TR_TARGET_X86) || defined (TR_TARGET_S390)
 INSTANTIATE_TEST_CASE_P(lBitPermute, lBitPermuteTest,
               ::testing::Combine(
                  ::testing::ValuesIn(longValues),
@@ -601,4 +636,3 @@ INSTANTIATE_TEST_CASE_P(bBitPermute, bBitPermuteTest,
                  ::testing::ValuesIn(testArrays),
                  ::testing::ValuesIn(byteLengths),
                  ::testing::Values(static_cast<uint8_t (*) (uint8_t, const uint8_t*, uint32_t)> (bitPermuteOracle))));
-#endif

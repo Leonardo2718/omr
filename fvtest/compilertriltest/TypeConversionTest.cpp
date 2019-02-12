@@ -705,7 +705,6 @@ INSTANTIATE_TEST_CASE_P(TypeConversionTest, Int64ToInt32, ::testing::Combine(
     ::testing::Values(
         std::make_tuple("l2i", l2i) )));
 
-#ifndef TR_TARGET_POWER
 float i2f(int32_t x) {
     return static_cast<float>(x);
 }
@@ -805,6 +804,10 @@ TEST_P(Int64ToFloat, UsingConst) {
 }
 
 TEST_P(Int64ToFloat, UsingLoadParam) {
+    std::string arch = omrsysinfo_get_CPU_architecture();
+    SKIP_IF(OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch, KnownBug)
+        << "l2f relies on calling on non-existing runtime helper (see issue #3369)";
+
     auto param = TRTest::to_struct(GetParam());
 
     char *inputTrees =
@@ -941,7 +944,6 @@ INSTANTIATE_TEST_CASE_P(TypeConversionTest, Int64ToDouble, ::testing::Combine(
     ::testing::ValuesIn(TRTest::const_values<int64_t>()),
     ::testing::Values(
         std::make_tuple("l2d", l2d) )));
-#endif
 
 template <typename F, typename I>
 bool fp_filter(F a)

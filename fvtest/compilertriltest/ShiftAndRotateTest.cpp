@@ -240,13 +240,14 @@ TEST_P(Int16ShiftAndRotate, UsingConst) {
     ASSERT_EQ(param.oracle(param.lhs, param.rhs), entry_point());
 }
 
-#if !defined(TR_TARGET_POWER)
 TEST_P(Int16ShiftAndRotate, UsingLoadParam) {
+    auto param = TRTest::to_struct(GetParam());
+
     std::string arch = omrsysinfo_get_CPU_architecture();
+    SKIP_IF("sshl" == param.opcode && (OMRPORT_ARCH_PPC == arch || OMRPORT_ARCH_PPC64 == arch || OMRPORT_ARCH_PPC64LE == arch), KnownBug)
+        << "sshl hos no evaluator implemented on Power (see issue #1804)";
     SKIP_IF(OMRPORT_ARCH_S390 == arch || OMRPORT_ARCH_S390X == arch, KnownBug)
         << "The Z code generator incorrectly spills sub-integer types arguments (see issue #3525)";
-
-    auto param = TRTest::to_struct(GetParam());
 
     char inputTrees[120] = {0};
     std::snprintf(inputTrees, 120, "(method return=Int16 args=[Int16, Int32] (block (ireturn (s2i (%s (sload parm=0) (iload parm=1)) ))))", param.opcode.c_str());
@@ -261,7 +262,6 @@ TEST_P(Int16ShiftAndRotate, UsingLoadParam) {
     auto entry_point = compiler.getEntryPoint<int16_t (*)(int16_t, int32_t)>();
     ASSERT_EQ(param.oracle(param.lhs, param.rhs), entry_point(param.lhs, param.rhs));
 }
-#endif
 
 INSTANTIATE_TEST_CASE_P(ShiftAndRotateTest, Int16ShiftAndRotate, ::testing::Combine(
     ::testing::ValuesIn(static_cast< std::vector<std::tuple<int16_t, int32_t>> (*) (void) > (test_input_values)()),
