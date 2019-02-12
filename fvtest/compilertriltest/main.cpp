@@ -29,6 +29,8 @@ int omr_main_entry(int argc, char **argv, char **envp);
 OMRPortLibrary TRTest::TestWithPortLib::PortLib;
 omrthread_t TRTest::TestWithPortLib::current_thread = NULL;
 
+int SkipCounter::skipCount[SkipReason::NumSkipReasons_];
+
 /**
  * @brief Global test environment to initialize and shutdown the port library
  */
@@ -43,9 +45,24 @@ class JitTestEnvironment: public ::testing::Environment {
    }
 };
 
+class SkippedTestListener: public ::testing::EmptyTestEventListener {
+   public:
+   virtual void OnTestProgramEnd(const UnitTest& unit_test) {
+      int total_skips = 0;
+      printf("[  SKIPPED  ]\n");
+      for (int i = 0; i < static_cast<int>(SkipReason::NumSkipReasons_); ++i) {
+         printf("  %6d %s\n", SkipCounter::skipCount[i], skipReasonStrings[i]);
+         total_skips += SkipCounter::skipCount[i];
+      }
+      printf("  %6d Total\n", total_skips);
+   }
+};
+
 int omr_main_entry(int argc, char **argv, char **envp) {
    ::testing::InitGoogleTest(&argc, argv);
    OMREventListener::setDefaultTestListener();
+   ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
+  listeners.Append(new SkippedTestListener);
    ::testing::AddGlobalTestEnvironment(new JitTestEnvironment);
    return RUN_ALL_TESTS();
 }

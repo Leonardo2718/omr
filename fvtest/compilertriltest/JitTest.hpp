@@ -425,6 +425,11 @@ inline std::ostream& operator << (std::ostream& os, SkipReason reason)
    return os <<  skipReasonStrings[static_cast<int>(reason)];
    }
 
+class SkipCounter {
+   public:
+   static int skipCount[SkipReason::NumSkipReasons_];
+};
+
 /**
  * @brief A helper class to allow streaming messages to the SKIP_IF macro
  *
@@ -464,6 +469,7 @@ class SkipHelper
       const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
       ::testing::Test::RecordProperty("skipped", skipReasonStrings[static_cast<int>(reason_)]);
       std::cout << reason_ << ": Skipping test: " << test_info->name() << "\n    " << message << "\n";
+      SkipCounter::skipCount[reason_] += 1;
       SUCCEED() << message;
       }
 
