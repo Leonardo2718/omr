@@ -427,6 +427,16 @@ inline std::ostream& operator << (std::ostream& os, SkipReason reason)
 
 class SkipCounter {
    public:
+
+   static void incrementCount(SkipReason reason) {
+      skipCount[static_cast<int>(reason)] += 1;
+   }
+
+   static int currentCount(SkipReason reason) {
+      return skipCount[static_cast<int>(reason)];
+   }
+
+   private:
    static int skipCount[SkipReason::NumSkipReasons_];
 };
 
@@ -469,7 +479,7 @@ class SkipHelper
       const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
       ::testing::Test::RecordProperty("skipped", skipReasonStrings[static_cast<int>(reason_)]);
       std::cout << reason_ << ": Skipping test: " << test_info->name() << "\n    " << message << "\n";
-      SkipCounter::skipCount[reason_] += 1;
+      SkipCounter::incrementCount(reason_);
       SUCCEED() << message;
       }
 

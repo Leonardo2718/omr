@@ -51,8 +51,10 @@ class SkippedTestListener: public ::testing::EmptyTestEventListener {
       int total_skips = 0;
       printf("[  SKIPPED  ]\n");
       for (int i = 0; i < static_cast<int>(SkipReason::NumSkipReasons_); ++i) {
-         printf("  %6d %s\n", SkipCounter::skipCount[i], skipReasonStrings[i]);
-         total_skips += SkipCounter::skipCount[i];
+         auto reason = static_cast<SkipReason>(i);
+         int count = SkipCounter::currentCount(reason);
+         printf("  %6d %s\n", count, skipReasonStrings[i]);
+         total_skips += count;
       }
       printf("  %6d Total\n", total_skips);
    }
