@@ -478,7 +478,7 @@ class SkipHelper
       {
       const ::testing::TestInfo* const test_info = ::testing::UnitTest::GetInstance()->current_test_info();
       ::testing::Test::RecordProperty("skipped", skipReasonStrings[static_cast<int>(reason_)]);
-      std::cout << reason_ << ": Skipping test: " << test_info->name() << "\n    " << message << "\n";
+      std::cout << reason_ << ": Skipping test: " << test_info->test_case_name() << "." << test_info->name() << "\n    " << message << "\n";
       SkipCounter::incrementCount(reason_);
       SUCCEED() << message;
       }
