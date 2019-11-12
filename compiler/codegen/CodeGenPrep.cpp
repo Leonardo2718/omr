@@ -177,6 +177,109 @@ OMR::CodeGenerator::lowerTreesPreChildrenVisit(TR::Node * parent, TR::TreeTop * 
       }
    }
 
+/**
+ * @brief Lower newvalue into a new
+ *
+ * The `newvalue` opcode is primarely useful to the optimizer for
+ * representing fused allocation an initialization. However, it's
+ * functionality can also be implemented using the `new` opcode
+ * (although doing so makes analyses more difficult in the optimizer).
+ *
+ * This function takes a `newvalue` tree and lowers it to an equivalent
+ * sequence of trees using a `new` opcode. For example, the following
+ * tree:
+ *
+ *    treetop
+ *      newvalue jitNewValueObject (identityless)
+ *        loadaddr Vec3
+ *        fload x
+ *        fload y
+ *        fload z
+ *
+ * will turned into:
+ *
+ *    treetop
+ *      fload x
+ *    treetop
+ *      fload y
+ *    treetop
+ *      fload z
+ *    treetop
+ *      new jitNewValueObject (skipZeroInit)
+ *        loadaddr Vec3
+ *    istorei Vec3.x
+ *      ==>new
+ *      ==>fload x
+ *    istorei Vec3.y
+ *      ==>new
+ *      ==>fload y
+ *    istorei Vec3.z
+ *      ==>new
+ *      ==>fload z
+ *    fence
+ *
+ * Note that the (helper) symbol reference for the `new` node is be
+ * the same as the symbol reference for the `newvalue` node.
+ *
+ * The fence at the end is needed for platforms with weak memory ordering
+ * such as POWER. It may appear anywhere after allocation + initialization
+ * but before any operation that could publish the resulting reference to
+ * other threads.
+ *
+ * @param comp pointer to the compilation object
+ * @param node the node being lowered
+ * @param tt the TreeTop anchoring the node
+ */
+static void
+lowerNewValue(TR::Compilation *comp, TR::Node *node, TR::TreeTop *tt)
+   {
+   auto* prevTreeTop = tt->getPrevTreeTop();
+   auto* nextTreeTop = tt->getNextTreeTop();
+
+   // Iterate over every child that sets a field. The first
+   // child is skipped as it's only used to specify the type
+   // of the value being constructed. The second child is
+   // the one that actually initializes the first field.
+   for (int i = 1; i < node->getNumChildren(); ++i)
+      {
+      printf("Lowering newvalue...\n");
+      auto* n = TR::Node::create(TR::treetop, 1);
+      n->setFirst(node->getChild(i));
+      prevTreeTop = TR::TreeTop::create(comp, n, nextTreeTop, prevTreeTop);
+      prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
+      prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
+      }
+
+   // Create new TreeTop to anchor the new. The TreeTop for
+   // the newValue cannot be reused because it is referenced
+   // just after lowering the node.
+   auto* newNode = TR::Node::createWithSymRef(TR::New, 1, node->getSymbolReference());
+   newNode->setFirst(node->getChild(0));
+   auto* ttNode = TR::Node::create(TR::treetop, 1);
+   ttNode->setAndIncChild(0, newNode);
+   prevTreeTop = TR::TreeTop::create(comp, ttNode, nextTreeTop, prevTreeTop);
+   prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
+   prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
+
+   // Iterate over every child that sets a field and generated
+   // a store for the value.
+   for (int i = 1; i < node->getNumChildren(); ++i)
+      {
+      auto storeOpCode = TR::ILOpCode::indirectLoadOpCode(node->getChild(i)->getDataType());
+      auto* storeNode = TR::Node::create(storeOpCode, 2);
+      storeNode->setAndIncChild(0, newNode);
+      storeNode->setAndIncChild(1, node->getChild(i));
+      prevTreeTop = TR::TreeTop::create(comp, storeNode, nextTreeTop, prevTreeTop);
+      prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
+      prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
+      }
+
+   // add memory fence
+   prevTreeTop = TR::TreeTop::create(comp, TR::Node::create(TR::fence, 0) , nextTreeTop, prevTreeTop);
+   prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
+   prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
+   }
+
 void
 OMR::CodeGenerator::lowerTreeIfNeeded(
       TR::Node *node,
@@ -324,6 +427,10 @@ OMR::CodeGenerator::lowerTreeIfNeeded(
          }
       else
          self()->lowerTree(node, tt);
+      }
+   else if (node->getOpCodeValue() == TR::newvalue)
+      {
+      lowerNewValue(self()->comp(), node, tt);
       }
 
    if (node->getOpCodeValue() == TR::loadaddr || node->getOpCode().isLoadVarDirect())
