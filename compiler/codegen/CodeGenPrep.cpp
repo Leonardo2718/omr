@@ -234,7 +234,9 @@ static void
 lowerNewValue(TR::Compilation *comp, TR::Node *node, TR::TreeTop *tt)
    {
    auto* prevTreeTop = tt->getPrevTreeTop();
-   auto* nextTreeTop = tt->getNextTreeTop();
+
+   // remove tt from the TreeTop List
+   prevTreeTop->setNextTreeTop(NULL);
 
    // Iterate over every child that sets a field. The first
    // child is skipped as it's only used to specify the type
@@ -243,23 +245,21 @@ lowerNewValue(TR::Compilation *comp, TR::Node *node, TR::TreeTop *tt)
    for (int i = 1; i < node->getNumChildren(); ++i)
       {
       printf("Lowering newvalue...\n");
-      auto* n = TR::Node::create(TR::treetop, 1);
-      n->setFirst(node->getChild(i));
-      prevTreeTop = TR::TreeTop::create(comp, n, nextTreeTop, prevTreeTop);
+      auto* ttNode = TR::Node::create(TR::treetop, 1);
+      ttNode->setFirst(node->getChild(i));
+      prevTreeTop = TR::TreeTop::create(comp, ttNode, NULL, prevTreeTop);
       prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
-      prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
       }
 
    // Create new TreeTop to anchor the new. The TreeTop for
-   // the newValue cannot be reused because it is referenced
+   // the newValue cannot be reused because it is still used
    // just after lowering the node.
    auto* newNode = TR::Node::createWithSymRef(TR::New, 1, node->getSymbolReference());
    newNode->setFirst(node->getChild(0));
    auto* ttNode = TR::Node::create(TR::treetop, 1);
    ttNode->setAndIncChild(0, newNode);
-   prevTreeTop = TR::TreeTop::create(comp, ttNode, nextTreeTop, prevTreeTop);
+   prevTreeTop = TR::TreeTop::create(comp, ttNode, NULL, prevTreeTop);
    prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
-   prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
 
    // Iterate over every child that sets a field and generated
    // a store for the value.
@@ -269,14 +269,16 @@ lowerNewValue(TR::Compilation *comp, TR::Node *node, TR::TreeTop *tt)
       auto* storeNode = TR::Node::create(storeOpCode, 2);
       storeNode->setAndIncChild(0, newNode);
       storeNode->setAndIncChild(1, node->getChild(i));
-      prevTreeTop = TR::TreeTop::create(comp, storeNode, nextTreeTop, prevTreeTop);
+      prevTreeTop = TR::TreeTop::create(comp, storeNode, NULL, prevTreeTop);
       prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
-      prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
       }
 
    // add memory fence
-   prevTreeTop = TR::TreeTop::create(comp, TR::Node::create(TR::fence, 0) , nextTreeTop, prevTreeTop);
+   prevTreeTop = TR::TreeTop::create(comp, TR::Node::create(TR::fence, 0), NULL, prevTreeTop);
    prevTreeTop->getPrevTreeTop()->setNextTreeTop(prevTreeTop);
+
+   // finish by linking to the next TreeTop
+   prevTreeTop->setNextTreeTop(tt->getNextRealTreeTop());
    prevTreeTop->getNextTreeTop()->setPrevTreeTop(prevTreeTop);
    }
 
